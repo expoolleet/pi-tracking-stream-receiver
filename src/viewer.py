@@ -4,6 +4,8 @@ from PySide6.QtCore import Qt, QRect, Signal
 from PySide6.QtGui import QPixmap, QImage
 
 from src.tools import numpy_to_pixmap
+from src.streamer import Streamer
+
 import threading
 import numpy as np
 import time
@@ -22,13 +24,11 @@ class Viewer(QWidget):
     play_pressed_signal = Signal()
     stop_pressed_signal = Signal()
 
-    def __init__(self, parent=None, streamer=None):
+    def __init__(self, parent=None, streamer: Streamer =None):
         super().__init__(parent)
         self.parent = parent
         self.ui = parent.ui
         self.ui.toggleButton.clicked.connect(self.onToggleButton_clicked)
-        self.ui.connectButton.clicked.connect(self.onConnectButton_clicked)
-
         self.load_default_view()
         self.current_frame = self.ui.viewLabel.pixmap()
         self.view_thread = None
@@ -50,7 +50,6 @@ class Viewer(QWidget):
             self.ui.viewLabel.setPixmap(numpy_to_pixmap(black_frame))
 
 
-
     def update(self) -> None:
         """
         Update the view
@@ -70,6 +69,7 @@ class Viewer(QWidget):
             end_time = time.time() - start_time
             if end_time < TARGET_FRAME_TIME:
                 time.sleep(TARGET_FRAME_TIME - end_time)
+
 
     def play(self) -> None:
         """
@@ -93,7 +93,6 @@ class Viewer(QWidget):
         self.stop_pressed_signal.emit()
 
 
-    ## Slots
     @QtCore.Slot()
     def onToggleButton_clicked(self) -> None:
         try:
@@ -103,8 +102,3 @@ class Viewer(QWidget):
                 self.stop()
         except Exception as e:
             print(e)
-
-
-    @QtCore.Slot()
-    def onConnectButton_clicked(self) -> None:
-        print('onConnectButton_clicked')

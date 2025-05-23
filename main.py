@@ -1,6 +1,7 @@
 # This Python file uses the following encoding: utf-8
 import sys
 
+from PySide6 import QtCore
 from PySide6.QtWidgets import QApplication, QWidget
 from PySide6.QtCore import Qt, QObject, QEvent
 from PySide6.QtGui import QPixmap, QMouseEvent
@@ -25,6 +26,8 @@ class Widget(QWidget):
         self.ui = Ui_Widget()
         self.ui.setupUi(self)
 
+        self.ui.connectButton.clicked.connect(self.onConnectButton_clicked)
+
         self.streamer = Streamer(self)
 
         self.viewer = Viewer(self, self.streamer)
@@ -32,28 +35,29 @@ class Widget(QWidget):
         self.viewer.play_pressed_signal.connect(self.update_gui_on_play)
         self.viewer.stop_pressed_signal.connect(self.update_gui_on_stop)
 
+
         self.roi_handler = ROIHandler(self, self.ui.viewLabel)
         self.roi_handler.enable_roi_selecting()
         self.roi_handler.roi_selected_signal.connect(self.send_roi_to_server)
-        self.update_view_label = self.roi_handler.draw_roi_on_pixmap(self.update_view_label) # wrapper
+        self.update_view_label = self.roi_handler.draw_roi_on_frame(self.update_view_label) # wrapper
+        self.viewer.stop_pressed_signal.connect(self.roi_handler.reset_roi)
 
         self.viewLabel_event_filter = MouseEventFilter(
-            self.roi_handler.handle_roi,
-            self.roi_handler.cancel_roi,
-            self.roi_handler.draw_roi,
+            self.roi_handler.on_left_click_handle_roi,
+            self.roi_handler.on_right_click_cancel_roi,
+            self.roi_handler.on_mouse_move_draw_roi,
         )
         self.ui.viewLabel.installEventFilter(self.viewLabel_event_filter)
 
-        self.socket = SocketHandler()
+        self.socket = SocketHandler(self)
+        self.socket.update_roi_signal.connect(self.roi_handler.update_roi)
 
         self.debug = DebugEmitter(self)
         self.debug.debug_signal.connect(self.show_debug_message)
 
 
     def send_roi_to_server(self, roi):
-        data = {"roi": roi}
-        print(data)
-        self.socket.socket_send("ROI", data)
+        self.socket.send("roi", roi)
 
 
     def update_view_label(self, frame: np.ndarray) -> None:
@@ -83,6 +87,11 @@ class Widget(QWidget):
         if self.streamer:
             self.streamer.stop()
         e.accept()
+
+
+    @QtCore.Slot()
+    def onConnectButton_clicked(self) -> None:
+        print('onConnectButton_clicked') # change later
 
 
 class MouseEventFilter(QObject):

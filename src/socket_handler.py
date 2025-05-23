@@ -18,36 +18,22 @@ class SocketData:
 
 class SocketHandler(QObject):
 
-    roi_changed_signal = Signal(np.ndarray)
+    update_roi_signal = Signal(np.ndarray)
 
-    def __init__(self):
-        self.socket = self.create_socket()
-        threading.Thread(target=self.receive_socket)
-
-    def receive_socket(self):
-        while True:
-            try:
-                data = self.sock.recv(1024)
-                if not data:
-                    print("Server disconnected.")
-                    break
-                try:
-                    message = json.loads(data.decode('utf-8'))
-                    if "roi" in message:
-                        received_roi = message["roi"]
-                        self.roi_changed_signal.emit(received_roi)
-                    else:
-                        print(f"Received unknown message: {message}")
-                except json.JSONDecodeError:
-                    print(f"Received non-JSON data: {data.decode('utf-8').strip()}")
-            except socket.error as e:
-                print("Socket error:", e)
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.socket = self.create()
+        self.receive_thread = threading.Thread(target=self.receive, daemon=True)
+        self.receive_thread.start()
 
 
-    def create_socket(self):
+    @staticmethod
+    def create():
         return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    def decode_data(self, command, data):
+
+    @staticmethod
+    def encode_data(command, data):
         packet = {
             "command": command,
             "data": data
@@ -55,40 +41,65 @@ class SocketHandler(QObject):
         raw_data = json.dumps(packet).encode('utf-8')
         return raw_data
 
-    def encode_data(self, raw_data):
+
+    @staticmethod
+    def decode_data(raw_data):
         try:
             data_str = raw_data.decode('utf-8')
             data = json.loads(data_str)
             if "data" not in data or data["data"] is None:
                 return data.get("message", "")
             else:
-                return (data.get("message", ""), data["data"])
+                return data.get("message", ""), data["data"]
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
             print(f"Failed to decode server response: {e}")
             return None
 
 
-    def socket_send(self, command: str, data: dict = {}):
+    def receive(self):
+        while True:
+            try:
+                data = self.socket.recv(SOCKET_BUFFER_SIZE)
+                if not data:
+                    pass
+                while b"\n" in data:
+                    try:
+                        line, data = data.split(b"\n", 1)
+                        message = json.loads(line.decode("utf-8"))
+                        print(message)
+                        if message["roi"]:
+                            received_roi = message["roi"]
+                            self.update_roi_signal.emit(received_roi)
+                        else:
+                            print(f"Received unknown message: {message}")
+                    except json.JSONDecodeError:
+                        print(f"Received non-JSON data: {data.decode('utf-8').strip()}")
+            except OSError as e:
+                if e.winerror == 10057:
+                    pass
+            except socket.error as e:
+                print("Socket error:", e)
+
+
+    def send(self, command: str, data: dict = {}):
         try:
             if self.socket is not None:
-                print('socket sent:', command, data)
-                self.socket.send(self.decode_data(command, data))
-                #answer = self.socket.recv(SOCKET_BUFFER_SIZE)
-                #return self.encode_data(answer)
+                encoded_data = self.encode_data(command, data)
+                print('socket sent:', command, encoded_data)
+                self.socket.send(encoded_data)
             else:
                 print("No socket has been initialized")
-                #return None
         except (socket.error, BrokenPipeError) as e:
             print(f"Socket error: {e}")
-            # if self.reconnect():
-            #     return self.socket_send(command, data)
-            # else:
-            #     print("Failed to reconnect to server")
-            #     return None
+            if self.reconnect():
+                self.send(command, data)
+            else:
+                print("Failed to reconnect to server")
+
 
     def reconnect(self):
         self.socket.close()
-        self.socket = self.create_socket()
+        self.socket = self.create()
         timeout = 1
         for attempt in range(1, MAX_RECONNECT_ATTEMPTS + 1):
             try:

@@ -21,16 +21,13 @@ TIME_OUT = 1
 class Streamer(QWidget):
     def __init__(self, parent=None, stream_size=(640, 480)):
         super().__init__(parent)
-
         self.ffmpeg_process = None
         self.current_frame = np.zeros((stream_size[1], stream_size[0], 3), dtype=np.uint8)
         self.stream_thread = None
         self.err_thread = None
-
         self.stream_width = stream_size[0]
         self.stream_height = stream_size[1]
         self.stream_lock = threading.Lock()
-
         self.debug = DebugEmitter(self)
 
 
@@ -67,7 +64,6 @@ class Streamer(QWidget):
             self.debug.send("stderr thread stopped")
         except Exception as e:
             self.debug.send(f"Monitoring stderr was failed: {e}")
-
 
 
     def read_stream(self) -> None:

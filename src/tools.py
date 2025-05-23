@@ -15,7 +15,6 @@ def numpy_to_pixmap(array: np.ndarray) -> QPixmap:
     return QPixmap.fromImage(image)
 
 
-
 def scale_pixmap(size, pixmap) -> QPixmap:
     """
     Scales a QPixmap to a given size.
@@ -24,8 +23,6 @@ def scale_pixmap(size, pixmap) -> QPixmap:
     :return QPixmap:
     """
     return pixmap.scaled(size, Qt.KeepAspectRatio, Qt.FastTransformation)
-
-
 
 
 class DebugEmitter(QObject):
@@ -39,11 +36,13 @@ class DebugEmitter(QObject):
             cls._instance = super(DebugEmitter, cls).__new__(cls)
         return cls._instance
 
+
     def __init__(self, parent=None):
         if getattr(self, "_initialized", False):
             return
         super().__init__(parent)
         self._initialized = True
+
 
     def send(self, msg: str) -> None:
         self.debug_signal.emit(msg)

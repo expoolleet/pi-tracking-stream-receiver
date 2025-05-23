@@ -4,13 +4,24 @@ from PySide6.QtGui import QPixmap, QImage
 from src.tools import numpy_to_pixmap
 import cv2
 import numpy as np
+from enum import Enum
 
-ROI_COLOR = (0, 0, 255)
+SELECTING_ROI_COLOR = (0, 255, 0)
+TRACKING_ROI_COLOR = (0, 0, 255)
+FAILED_ROI_COLOR = (255, 0, 0)
+
 ROI_THICKNESS = 2
 
 INIT_START_POINT = [0, 0]
 INIT_END_POINT = [0, 0]
 INIT_ROI = [0, 0, 0, 0]
+
+class ROIState(Enum):
+    NONE = 0
+    SELECTING = 1
+    TRACKING = 2
+    FAILED = 3
+
 
 class ROIHandler(QObject):
 
@@ -25,6 +36,7 @@ class ROIHandler(QObject):
         self.enabled = True
         self.is_mouse_dragging = False
         self.stream_size = stream_size
+        self.current_state = ROIState.NONE
 
         self.view_label = view_label
 
@@ -37,9 +49,9 @@ class ROIHandler(QObject):
         self.enabled = False
 
 
-    def add_roi_to_frame(self, frame: np.ndarray, p1, p2) -> np.ndarray:
+    def add_roi_to_frame(self, frame: np.ndarray, p1, p2, color) -> np.ndarray:
         cv_frame = frame.copy()
-        cv2.rectangle(cv_frame, p1, p2, ROI_COLOR, ROI_THICKNESS)
+        cv2.rectangle(cv_frame, p1, p2, color, ROI_THICKNESS)
         return cv_frame
 
 
@@ -60,7 +72,6 @@ class ROIHandler(QObject):
         x1, y1 = self.start_point
         x2, y2 = self.end_point
 
-
         roi_width = abs(x2 - x1)
         roi_height = abs(y2 - y1)
 
@@ -73,19 +84,33 @@ class ROIHandler(QObject):
         return self.roi
 
 
-    def reset_points(self):
+    def update_roi(self, roi) -> None:
+        if self.current_state == ROIState.SELECTING:
+            return
+
+        if all(v == 0 for v in roi):
+            self.change_state(ROIState.FAILED)
+        else:
+            self.roi = roi
+            self.change_state(ROIState.TRACKING)
+
+
+    def reset_points(self) -> None:
         self.start_point = INIT_START_POINT
         self.end_point = INIT_END_POINT
 
 
-    def reset_roi(self):
+    def reset_roi(self) -> None:
+        self.change_state(ROIState.NONE)
         self.roi = INIT_ROI
 
 
-    def handle_roi(self, pos) -> None:
+    def on_left_click_handle_roi(self, pos) -> None:
         if self.enabled:
             self.is_mouse_dragging = not self.is_mouse_dragging
             if self.is_mouse_dragging:
+                self.change_state(ROIState.SELECTING)
+
                 pixmap = self.view_label.pixmap()
                 if pixmap is None:
                     return
@@ -105,16 +130,17 @@ class ROIHandler(QObject):
             else:
                 self.calculate_roi()
                 self.reset_points()
+                self.change_state(ROIState.NONE)
                 self.roi_selected_signal.emit(self.roi)
 
 
-    def cancel_roi(self, pos) -> None:
+    def on_right_click_cancel_roi(self, pos) -> None:
         if self.enabled:
             self.reset_points()
             self.reset_roi()
 
 
-    def draw_roi(self, pos) -> None:
+    def on_mouse_move_draw_roi(self, pos) -> None:
         if self.is_mouse_dragging:
 
             pixmap = self.view_label.pixmap()
@@ -134,11 +160,32 @@ class ROIHandler(QObject):
                               max(0, min(int((y - offset_y) * height_ratio), int(pixmap.height() * height_ratio) - 1))]
 
 
-    def draw_roi_on_pixmap(self, func) -> None:
+    def change_state(self, state):
+        self.current_state = state
+
+
+    def get_roi_points(self):
+        p1 = (self.roi[0], self.roi[1])
+        p2 = (self.roi[0] + self.roi[2], self.roi[1] + self.roi[3])
+        return p1, p2
+
+
+    def draw_roi(self, frame):
+        if self.current_state == ROIState.SELECTING:
+            return self.add_roi_to_frame(frame, self.start_point, self.end_point, TRACKING_ROI_COLOR)
+        elif self.current_state == ROIState.TRACKING:
+            p1, p2 = self.get_roi_points()
+            return self.add_roi_to_frame(frame, p1, p2, SELECTING_ROI_COLOR)
+        elif self.current_state == ROIState.FAILED:
+            p1, p2 = self.get_roi_points()
+            return self.add_roi_to_frame(frame, p1, p2, FAILED_ROI_COLOR)
+        return frame
+
+
+
+    def draw_roi_on_frame(self, func) -> None:
         def wrapper(*args, **kwargs):
             args = list(args)
-            frame = args[0]
-            if self.enabled and (self.start_point != INIT_START_POINT or self.end_point != INIT_END_POINT):
-                args[0] = self.add_roi_to_frame(frame, self.start_point, self.end_point)
+            args[0] = self.draw_roi(args[0])
             return func(*args, **kwargs)
         return wrapper

@@ -23,7 +23,7 @@ class Ui_Widget(object):
     def setupUi(self, Widget):
         if not Widget.objectName():
             Widget.setObjectName(u"Widget")
-        Widget.resize(1280, 960)
+        Widget.resize(960, 720)
         Widget.setMinimumSize(QSize(640, 480))
         Widget.setMaximumSize(QSize(1920, 1440))
         self.horizontalLayout_2 = QHBoxLayout(Widget)
@@ -37,7 +37,7 @@ class Ui_Widget(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.viewLabel.sizePolicy().hasHeightForWidth())
         self.viewLabel.setSizePolicy(sizePolicy)
-        self.viewLabel.setMinimumSize(QSize(0, 720))
+        self.viewLabel.setMinimumSize(QSize(0, 480))
         self.viewLabel.setCursor(QCursor(Qt.CursorShape.CrossCursor))
 #if QT_CONFIG(tooltip)
         self.viewLabel.setToolTip(u"")
