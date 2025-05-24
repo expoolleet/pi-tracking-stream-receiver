@@ -6,6 +6,8 @@ import numpy as np
 
 from PySide6.QtCore import Qt, Signal, QObject
 
+from src.tools import DebugEmitter
+
 SOCKET_BUFFER_SIZE = 1024
 MAX_RECONNECT_ATTEMPTS = 3
 
@@ -25,6 +27,7 @@ class SocketHandler(QObject):
         self.socket = self.create()
         self.receive_thread = threading.Thread(target=self.receive, daemon=True)
         self.receive_thread.start()
+        self.debug = DebugEmitter()
 
 
     @staticmethod
@@ -32,8 +35,7 @@ class SocketHandler(QObject):
         return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
-    @staticmethod
-    def encode_data(command, data):
+    def encode_data(self, command, data):
         packet = {
             "command": command,
             "data": data
@@ -42,8 +44,7 @@ class SocketHandler(QObject):
         return raw_data
 
 
-    @staticmethod
-    def decode_data(raw_data):
+    def decode_data(self, raw_data):
         try:
             data_str = raw_data.decode('utf-8')
             data = json.loads(data_str)
@@ -52,7 +53,7 @@ class SocketHandler(QObject):
             else:
                 return data.get("message", ""), data["data"]
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
-            print(f"Failed to decode server response: {e}")
+            self.debug.send(f"Failed to decode server response: {e}")
             return None
 
 
@@ -66,35 +67,34 @@ class SocketHandler(QObject):
                     try:
                         line, data = data.split(b"\n", 1)
                         message = json.loads(line.decode("utf-8"))
-                        print(message)
                         if message["roi"]:
                             received_roi = message["roi"]
                             self.update_roi_signal.emit(received_roi)
                         else:
-                            print(f"Received unknown message: {message}")
+                            self.debug.send(f"Received unknown message: {message}")
                     except json.JSONDecodeError:
-                        print(f"Received non-JSON data: {data.decode('utf-8').strip()}")
+                        self.debug.send(f"Received non-JSON data: {data.decode('utf-8').strip()}")
             except OSError as e:
                 if e.winerror == 10057:
                     pass
             except socket.error as e:
-                print("Socket error:", e)
+                self.debug.send("Socket error:", e)
 
 
     def send(self, command: str, data: dict = {}):
         try:
             if self.socket is not None:
                 encoded_data = self.encode_data(command, data)
-                print('socket sent:', command, encoded_data)
+                self.debug.send(f"socket sent: {command}; {encoded_data}")
                 self.socket.send(encoded_data)
             else:
-                print("No socket has been initialized")
+                self.debug.send("No socket has been initialized")
         except (socket.error, BrokenPipeError) as e:
-            print(f"Socket error: {e}")
+            self.debug.send(f"Socket error: {e}")
             if self.reconnect():
                 self.send(command, data)
             else:
-                print("Failed to reconnect to server")
+                self.debug.send("Failed to reconnect to server")
 
 
     def reconnect(self):
@@ -103,11 +103,11 @@ class SocketHandler(QObject):
         timeout = 1
         for attempt in range(1, MAX_RECONNECT_ATTEMPTS + 1):
             try:
-                print(f"Trying to reconnect... Attempt {attempt}/{MAX_RECONNECT_ATTEMPTS}")
+                self.debug.send(f"Trying to reconnect... Attempt {attempt}/{MAX_RECONNECT_ATTEMPTS}")
                 self.socket.connect((SERVER_IP, SERVER_PORT))
-                print("Reconnected successfully")
+                self.debug.send("Reconnected successfully")
                 return True
             except socket.error as e:
-                print(f"Reconnection failed: {e}")
+                self.debug.send(f"Reconnection failed: {e}")
                 time.sleep((timeout + attempt) * 2)
         return False

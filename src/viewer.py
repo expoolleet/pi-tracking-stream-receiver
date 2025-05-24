@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QWidget, QLabel
 from PySide6.QtCore import Qt, QRect, Signal
 from PySide6.QtGui import QPixmap, QImage
 
-from src.tools import numpy_to_pixmap
+from src.tools import numpy_to_pixmap, DebugEmitter
 from src.streamer import Streamer
 
 import threading
@@ -34,6 +34,7 @@ class Viewer(QWidget):
         self.view_thread = None
         self.streamer = streamer
         self.is_playing = False
+        self.debug = DebugEmitter()
 
 
     def load_default_view(self) -> None:
@@ -45,7 +46,7 @@ class Viewer(QWidget):
             no_connection = QPixmap(NO_CONNECTION_IMAGE)
             self.ui.viewLabel.setPixmap(no_connection)
         except Exception as e:
-            print(e)
+            self.debug.send(f"Error loading default view: {e}")
             black_frame = np.zeros((480, 640, 3), dtype=np.uint8)
             self.ui.viewLabel.setPixmap(numpy_to_pixmap(black_frame))
 
@@ -57,14 +58,13 @@ class Viewer(QWidget):
         """
         while self.is_playing:
             start_time = time.time()
-
             try:
                 frame = self.streamer.get_current_frame()
                 qpixmap = numpy_to_pixmap(frame)
                 self.current_frame = qpixmap
                 self.frame_ready_signal.emit(frame)
             except Exception as e:
-                print(e)
+                self.debug.send(f"Error updating view: {e}")
 
             end_time = time.time() - start_time
             if end_time < TARGET_FRAME_TIME:

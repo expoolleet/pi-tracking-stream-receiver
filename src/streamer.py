@@ -4,7 +4,6 @@ import time
 import subprocess
 import numpy as np
 
-from ui_form import Ui_Widget
 from PySide6.QtWidgets import QWidget
 
 from src.tools import DebugEmitter
@@ -13,7 +12,10 @@ from src.tools import DebugEmitter
 input_options = {
     "loglevel": "info",
     "fflags": "nobuffer",
-    "flags": "low_delay"
+    "fflags": "discardcorrupt",
+    "flags": "low_delay",
+    "pkt_size": 1316,
+    "probesize": "100k"
 }
 
 TIME_OUT = 1
@@ -28,7 +30,7 @@ class Streamer(QWidget):
         self.stream_width = stream_size[0]
         self.stream_height = stream_size[1]
         self.stream_lock = threading.Lock()
-        self.debug = DebugEmitter(self)
+        self.debug = DebugEmitter()
 
 
     def start(self, url: str) -> None:
@@ -72,9 +74,9 @@ class Streamer(QWidget):
                 if self.ffmpeg_process:
                     data_size = self.stream_width * self.stream_height * 3
                     raw_frame = self.ffmpeg_process.stdout.read(data_size)
-
+                    self.ffmpeg_process.stdout.flush()
                     if raw_frame is None or len(raw_frame) != data_size:
-                        print("Raw frame is empty or broken, sleeping...")
+                        self.debug.send("Raw frame is empty or broken, sleeping...")
                         time.sleep(TIME_OUT)
 
                     with self.stream_lock:
@@ -83,10 +85,10 @@ class Streamer(QWidget):
                 else:
                     time.sleep(0.1)
             except subprocess.SubprocessError as e:
-                print(f"Subprocess error: {e}")
+                self.debug.send(f"Subprocess error: {e}")
                 time.sleep(TIME_OUT)
             except ValueError as e:
-                print(f"ValueError error: {e}")
+                self.debug.send(f"ValueError error: {e}")
 
 
     def get_current_frame(self) -> np.ndarray:

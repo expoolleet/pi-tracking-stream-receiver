@@ -5,6 +5,7 @@ from src.tools import numpy_to_pixmap
 import cv2
 import numpy as np
 from enum import Enum
+from typing import Tuple
 
 SELECTING_ROI_COLOR = (0, 255, 0)
 TRACKING_ROI_COLOR = (0, 0, 255)
@@ -15,6 +16,7 @@ ROI_THICKNESS = 2
 INIT_START_POINT = [0, 0]
 INIT_END_POINT = [0, 0]
 INIT_ROI = [0, 0, 0, 0]
+
 
 class ROIState(Enum):
     NONE = 0
@@ -37,7 +39,6 @@ class ROIHandler(QObject):
         self.is_mouse_dragging = False
         self.stream_size = stream_size
         self.current_state = ROIState.NONE
-
         self.view_label = view_label
 
 
@@ -160,17 +161,17 @@ class ROIHandler(QObject):
                               max(0, min(int((y - offset_y) * height_ratio), int(pixmap.height() * height_ratio) - 1))]
 
 
-    def change_state(self, state):
+    def change_state(self, state) -> None:
         self.current_state = state
 
 
-    def get_roi_points(self):
+    def get_roi_points(self) -> Tuple[Tuple[int, int], Tuple[int, int]]:
         p1 = (self.roi[0], self.roi[1])
         p2 = (self.roi[0] + self.roi[2], self.roi[1] + self.roi[3])
         return p1, p2
 
 
-    def draw_roi(self, frame):
+    def draw_roi(self, frame) -> np.ndarray:
         if self.current_state == ROIState.SELECTING:
             return self.add_roi_to_frame(frame, self.start_point, self.end_point, TRACKING_ROI_COLOR)
         elif self.current_state == ROIState.TRACKING:
