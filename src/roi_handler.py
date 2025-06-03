@@ -1,5 +1,5 @@
-﻿from PySide6.QtCore import Qt, Signal, QObject
-from PySide6.QtGui import QPixmap, QImage
+﻿from PySide6.QtCore import Signal, QObject
+from PySide6.QtGui import QImage
 
 from src.tools import numpy_to_pixmap
 import cv2
@@ -104,6 +104,7 @@ class ROIHandler(QObject):
     def reset_roi(self) -> None:
         self.change_state(ROIState.NONE)
         self.roi = INIT_ROI
+        print("reset")
 
 
     def on_left_click_handle_roi(self, pos) -> None:
@@ -132,7 +133,8 @@ class ROIHandler(QObject):
                 self.calculate_roi()
                 self.reset_points()
                 self.change_state(ROIState.NONE)
-                self.roi_selected_signal.emit(self.roi)
+                if self.roi[2] != 0 and self.roi[3] != 0:
+                    self.roi_selected_signal.emit(self.roi)
 
 
     def on_right_click_cancel_roi(self, pos) -> None:

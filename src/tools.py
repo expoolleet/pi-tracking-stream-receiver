@@ -1,7 +1,9 @@
 ﻿import numpy as np
 from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtCore import Qt, Signal, QObject
+import logging
 
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s')
 
 def numpy_to_pixmap(array: np.ndarray) -> QPixmap:
     """
@@ -46,4 +48,4 @@ class DebugEmitter(QObject):
 
     def send(self, msg: str) -> None:
         self.debug_signal.emit(msg)
-        print(f"<debug> {msg}")
+        logging.debug(msg)

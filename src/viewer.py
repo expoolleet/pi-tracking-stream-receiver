@@ -1,7 +1,7 @@
 ﻿from PySide6 import QtCore
-from PySide6.QtWidgets import QWidget, QLabel
-from PySide6.QtCore import Qt, QRect, Signal
-from PySide6.QtGui import QPixmap, QImage
+from PySide6.QtWidgets import QWidget
+from PySide6.QtCore import Signal
+from PySide6.QtGui import QPixmap
 
 from src.tools import numpy_to_pixmap, DebugEmitter
 from src.streamer import Streamer
@@ -15,8 +15,6 @@ NO_CONNECTION_IMAGE = "src/img/no_connection.png"
 TARGET_FPS = 30
 TARGET_FRAME_TIME = 1 / TARGET_FPS
 
-TEST_URL = "udp://10.20.1.12:8000"
-
 
 class Viewer(QWidget):
 
@@ -24,17 +22,19 @@ class Viewer(QWidget):
     play_pressed_signal = Signal()
     stop_pressed_signal = Signal()
 
-    def __init__(self, parent=None, streamer: Streamer =None):
+
+    def __init__(self, parent=None, streamer: Streamer = None):
         super().__init__(parent)
         self.parent = parent
         self.ui = parent.ui
-        self.ui.toggleButton.clicked.connect(self.onToggleButton_clicked)
+        self.ui.toggle_button.clicked.connect(self.on_toggle_button_clicked)
         self.load_default_view()
         self.current_frame = self.ui.viewLabel.pixmap()
         self.view_thread = None
         self.streamer = streamer
         self.is_playing = False
         self.debug = DebugEmitter()
+        self.stream_url = None
 
 
     def load_default_view(self) -> None:
@@ -71,13 +71,19 @@ class Viewer(QWidget):
                 time.sleep(TARGET_FRAME_TIME - end_time)
 
 
+    def change_stream_url(self, stream_params) -> None:
+        if "stream_ip" in stream_params and "stream_port" in stream_params:
+            self.stream_url = f"{stream_params['stream_protocol']}://{stream_params['stream_ip']}:{stream_params['stream_port']}"
+        else:
+            self.debug.send("Invalid stream parameters")
+
     def play(self) -> None:
         """
         Play the stream
         :return:
         """
         self.is_playing = True
-        self.streamer.start(TEST_URL)
+        self.streamer.start(self.stream_url)
         self.view_thread = threading.Thread(target=self.update, daemon=True)
         self.view_thread.start()
         self.play_pressed_signal.emit()
@@ -94,11 +100,11 @@ class Viewer(QWidget):
 
 
     @QtCore.Slot()
-    def onToggleButton_clicked(self) -> None:
+    def on_toggle_button_clicked(self) -> None:
         try:
             if not self.is_playing:
                 self.play()
             else:
                 self.stop()
         except Exception as e:
-            print(e)
+            self.debug.send(f"Error occurred when toggle button was pressed: {e}")

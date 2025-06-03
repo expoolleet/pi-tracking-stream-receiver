@@ -4,9 +4,10 @@ import time
 import threading
 import numpy as np
 
-from PySide6.QtCore import Qt, Signal, QObject
+from PySide6.QtCore import Signal, QObject
 
-from src.tools import DebugEmitter
+from .tools import DebugEmitter
+from .commands import Command
 
 SOCKET_BUFFER_SIZE = 1024
 MAX_RECONNECT_ATTEMPTS = 3
@@ -21,6 +22,7 @@ class SocketData:
 class SocketHandler(QObject):
 
     update_roi_signal = Signal(np.ndarray)
+    stop_tracking_signal = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -31,11 +33,11 @@ class SocketHandler(QObject):
 
 
     @staticmethod
-    def create():
+    def create() -> socket.socket:
         return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
-    def encode_data(self, command, data):
+    def encode_data(self, command, data) -> bytes:
         packet = {
             "command": command,
             "data": data
@@ -57,23 +59,35 @@ class SocketHandler(QObject):
             return None
 
 
-    def receive(self):
+    def handle_message(self, message) -> None:
+        self.debug.send(f"server sent: {message}")
+        if "roi" in message:
+            received_roi = message["roi"]
+            self.update_roi_signal.emit(received_roi)
+        elif "command" in message:
+            print(message["command"], Command.STOP_TRACKING)
+            if message["command"] == Command.STOP_TRACKING:
+                self.stop_tracking_signal.emit()
+        else:
+            self.debug.send(f"Received unknown message: {message}")
+
+
+    def receive(self) -> None:
         while True:
             try:
                 data = self.socket.recv(SOCKET_BUFFER_SIZE)
                 if not data:
                     pass
-                while b"\n" in data:
-                    try:
+                if b"\n" in data:
+                    while b"\n" in data:
                         line, data = data.split(b"\n", 1)
                         message = json.loads(line.decode("utf-8"))
-                        if message["roi"]:
-                            received_roi = message["roi"]
-                            self.update_roi_signal.emit(received_roi)
-                        else:
-                            self.debug.send(f"Received unknown message: {message}")
-                    except json.JSONDecodeError:
-                        self.debug.send(f"Received non-JSON data: {data.decode('utf-8').strip()}")
+                        self.handle_message(message)
+                else:
+                    message = json.loads(data.decode("utf-8"))
+                    self.handle_message(message)
+            except json.JSONDecodeError:
+                self.debug.send(f"Received non-JSON data: {data.decode('utf-8').strip()}")
             except OSError as e:
                 if e.winerror == 10057:
                     pass
@@ -81,7 +95,7 @@ class SocketHandler(QObject):
                 self.debug.send("Socket error:", e)
 
 
-    def send(self, command: str, data: dict = {}):
+    def send(self, command: str, data: dict = {}) -> None:
         try:
             if self.socket is not None:
                 encoded_data = self.encode_data(command, data)
@@ -97,7 +111,7 @@ class SocketHandler(QObject):
                 self.debug.send("Failed to reconnect to server")
 
 
-    def reconnect(self):
+    def reconnect(self) -> bool:
         self.socket.close()
         self.socket = self.create()
         timeout = 1

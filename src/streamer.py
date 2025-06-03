@@ -48,16 +48,13 @@ class Streamer(QWidget):
 
     def stop(self) -> None:
         if self.ffmpeg_process:
-            self.ffmpeg_process.terminate()  # или kill()
-            self.ffmpeg_process.stdout.close()
-            self.ffmpeg_process.stderr.close()
-            self.ffmpeg_process.wait()
+            self.ffmpeg_process.kill()
             self.ffmpeg_process = None
 
 
     def monitor_stderr(self) -> None:
         try:
-            while True:
+            while self.ffmpeg_process is not None:
                 line = self.ffmpeg_process.stderr.readline()
                 if not line:
                     self.debug.send("stderr: EOF reached")
@@ -76,8 +73,9 @@ class Streamer(QWidget):
                     raw_frame = self.ffmpeg_process.stdout.read(data_size)
                     self.ffmpeg_process.stdout.flush()
                     if raw_frame is None or len(raw_frame) != data_size:
-                        self.debug.send("Raw frame is empty or broken, sleeping...")
-                        time.sleep(TIME_OUT)
+                        self.debug.send("Raw frame is empty or broken, exiting...")
+                        self.stop()
+                        break
 
                     with self.stream_lock:
                         self.current_frame = np.frombuffer(raw_frame, dtype=np.uint8).reshape(
@@ -89,10 +87,10 @@ class Streamer(QWidget):
                 time.sleep(TIME_OUT)
             except ValueError as e:
                 self.debug.send(f"ValueError error: {e}")
+            except Exception as e:
+                print("Exiting read stream...")
 
 
     def get_current_frame(self) -> np.ndarray:
         with self.stream_lock:
             return self.current_frame
-
-

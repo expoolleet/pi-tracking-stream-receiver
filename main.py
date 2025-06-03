@@ -3,21 +3,26 @@ import sys
 
 from PySide6 import QtCore
 from PySide6.QtWidgets import QApplication, QWidget
-from PySide6.QtCore import Qt, QObject, QEvent
-from PySide6.QtGui import QPixmap, QMouseEvent
+from PySide6.QtCore import Qt, QObject, QEvent, QRegularExpression
+from PySide6.QtGui import QPixmap, QMouseEvent, QRegularExpressionValidator
+
+import datetime
+import numpy as np
 
 from src.roi_handler import ROIHandler
 from src.socket_handler import SocketHandler
 from src.streamer import Streamer
 from src.viewer import Viewer
 from src.tools import numpy_to_pixmap, scale_pixmap, DebugEmitter
+from src.commands import Command
+from src.zeroconf_handler import ZeroconfHandler
+from src.widgets_text import *
 
-import datetime
-import numpy as np
+
 # Important:
 # You need to run the following command to generate the ui_form.py file
-#     pyside6-uic form.ui -o ui_form.py, or
-#     pyside2-uic form.ui -o ui_form.py
+#     pyside6-uic form.ui -o ui_form.py
+
 from ui_form import Ui_Widget
 
 class Widget(QWidget):
@@ -26,7 +31,11 @@ class Widget(QWidget):
         self.ui = Ui_Widget()
         self.ui.setupUi(self)
 
-        self.ui.connectButton.clicked.connect(self.onConnectButton_clicked)
+        validator = QRegularExpressionValidator(QRegularExpression(r"[0-9]+"))
+        self.ui.skip_frame_line_edit.setValidator(validator)
+        self.ui.line_edit_c1.setValidator(validator)
+        self.ui.line_edit_c2.setValidator(validator)
+        self.ui.line_edit_c3.setValidator(validator)
 
         self.streamer = Streamer(self)
 
@@ -38,7 +47,7 @@ class Widget(QWidget):
 
         self.roi_handler = ROIHandler(self, self.ui.viewLabel)
         self.roi_handler.enable_roi_selecting()
-        self.roi_handler.roi_selected_signal.connect(self.send_roi_to_server)
+        self.roi_handler.roi_selected_signal.connect(self.enable_tracking)
         self.update_view_label = self.roi_handler.draw_roi_on_frame(self.update_view_label) # wrapper
         self.viewer.stop_pressed_signal.connect(self.roi_handler.reset_roi)
 
@@ -49,15 +58,35 @@ class Widget(QWidget):
         )
         self.ui.viewLabel.installEventFilter(self.viewLabel_event_filter)
 
-        self.socket = SocketHandler(self)
-        self.socket.update_roi_signal.connect(self.roi_handler.update_roi)
+        self.socket_handler = SocketHandler(self)
+        self.socket_handler.update_roi_signal.connect(self.roi_handler.update_roi)
+        self.socket_handler.stop_tracking_signal.connect(self.roi_handler.reset_roi)
 
         self.debug = DebugEmitter(self)
         self.debug.debug_signal.connect(self.show_debug_message)
 
+        self.zeroconf_handler = ZeroconfHandler()
+        self.zeroconf_handler.listener.service_added_signal.connect(self.viewer.change_stream_url)
+        self.zeroconf_handler.listener.service_added_signal.connect(self.on_service_added)
 
-    def send_roi_to_server(self, roi):
-        self.socket.send("roi", roi)
+
+    def on_service_added(self, params) -> None:
+        self.ui.connection_label.setText(f"{CONNECTED_TO} {params['server_ip']}:{params['server_port']}")
+        self.ui.toggle_button.setEnabled(True)
+        self.ui.tracking_group_box.setEnabled(True)
+
+
+    def enable_tracking(self, roi) -> None:
+        if not self.viewer.is_playing:
+            return
+        data = {
+            "roi": roi,
+            "kalman": self.ui.kalman_radio_button.isChecked(),
+            "skip_frames": int(self.ui.skip_frame_line_edit.text())
+        }
+        self.socket_handler.send(Command.UPDATE_TRACKING, data)
+        self.ui.tracker_stop_button.setEnabled(True)
+        self.ui.kalman_group_box.setEnabled(False)
 
 
     def update_view_label(self, frame: np.ndarray) -> None:
@@ -65,12 +94,12 @@ class Widget(QWidget):
         self.ui.viewLabel.setPixmap(self.resize_pixmap(pixmap))
 
 
-    def update_gui_on_play(self):
-        self.ui.toggleButton.setText("Stop")
+    def update_gui_on_play(self) -> None:
+        self.ui.toggle_button.setText(STOP_TEXT)
 
 
-    def update_gui_on_stop(self):
-        self.ui.toggleButton.setText("Play")
+    def update_gui_on_stop(self) -> None:
+        self.ui.toggle_button.setText(PLAY_TEXT)
 
 
     def resize_pixmap(self, pixmap) -> QPixmap:
@@ -78,9 +107,9 @@ class Widget(QWidget):
         return scaled_pixmap
 
 
-    def show_debug_message(self, msg: str):
+    def show_debug_message(self, msg: str) -> None:
         current_datetime = datetime.datetime.now()
-        self.ui.plainTextEditDebug.appendPlainText(f"({current_datetime}) {msg}")
+        self.ui.debug_plain_text_edit.appendPlainText(f"({current_datetime}) {msg}")
 
 
     def closeEvent(self, e) -> None:
@@ -90,8 +119,18 @@ class Widget(QWidget):
 
 
     @QtCore.Slot()
-    def onConnectButton_clicked(self) -> None:
-        print('onConnectButton_clicked') # change later
+    def on_connect_button_clicked(self) -> None:
+        self.zeroconf_handler.browse()
+        self.ui.connection_label.setText(CONNECTION_AWATING)
+        self.ui.connect_button.setEnabled(False)
+        self.ui.cfs_group_box.setEnabled(True)
+
+
+    @QtCore.Slot()
+    def on_tracker_stop_button_clicked(self) -> None:
+        self.socket_handler.send(Command.STOP_TRACKING)
+        self.ui.tracker_stop_button.setEnabled(False)
+        self.ui.kalman_group_box.setEnabled(True)
 
 
 class MouseEventFilter(QObject):
@@ -102,7 +141,7 @@ class MouseEventFilter(QObject):
         self.callback_move = callback_move
 
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, obj, event) -> bool:
         if type(event) is QMouseEvent:
             if event.button() == Qt.LeftButton:
                 if self.callback_left_button is not None:
