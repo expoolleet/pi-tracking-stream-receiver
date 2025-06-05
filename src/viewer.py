@@ -9,11 +9,23 @@ from src.streamer import Streamer
 import threading
 import numpy as np
 import time
+from enum import Enum
 
 NO_CONNECTION_IMAGE = "src/img/no_connection.png"
+CONNECTION_ESTABLISHED_IMAGE = "src/img/connection_established.png"
 
 TARGET_FPS = 30
 TARGET_FRAME_TIME = 1 / TARGET_FPS
+
+
+class StreamResolution(Enum):
+    RES_1080p = 1
+    RES_900p = 2
+    RES_720p = 3
+    RES_480p = 4
+    RES_360p = 5
+    RES_240p = 6
+    RES_144p = 7
 
 
 class Viewer(QWidget):
@@ -27,33 +39,45 @@ class Viewer(QWidget):
         super().__init__(parent)
         self.parent = parent
         self.ui = parent.ui
-        self.ui.toggle_button.clicked.connect(self.on_toggle_button_clicked)
-        self.load_default_view()
+
+        self.load_no_connection_view()
         self.current_frame = self.ui.viewLabel.pixmap()
         self.view_thread = None
         self.streamer = streamer
+        self.stream_size = (streamer.stream_width, streamer.stream_height)
         self.is_playing = False
         self.debug = DebugEmitter()
         self.stream_url = None
 
+        self.parent.load_start_state_signal.connect(self.load_connection_established_view)
+        self.parent.toggle_view_signal.connect(self.toggle_view)
 
-    def load_default_view(self) -> None:
+
+    def load_connection_established_view(self):
+        self.load_image_view(CONNECTION_ESTABLISHED_IMAGE)
+
+
+    def load_no_connection_view(self):
+        self.load_image_view(NO_CONNECTION_IMAGE)
+
+
+    def load_image_view(self, view_image) -> None:
         """
-        Load the default view
+        Loads the image view
         :return None:
         """
         try:
-            no_connection = QPixmap(NO_CONNECTION_IMAGE)
+            no_connection = QPixmap(view_image)
             self.ui.viewLabel.setPixmap(no_connection)
         except Exception as e:
             self.debug.send(f"Error loading default view: {e}")
-            black_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            black_frame = np.zeros((self.stream_size[1], self.stream_size[0], 3), dtype=np.uint8)
             self.ui.viewLabel.setPixmap(numpy_to_pixmap(black_frame))
 
 
     def update(self) -> None:
         """
-        Update the view
+        Updates the view by sending signal with current frame
         :return None:
         """
         while self.is_playing:
@@ -72,15 +96,21 @@ class Viewer(QWidget):
 
 
     def change_stream_url(self, stream_params) -> None:
+        """
+        Changes the stream url using stream parameters
+        :param stream_params:
+        :return None:
+        """
         if "stream_ip" in stream_params and "stream_port" in stream_params:
             self.stream_url = f"{stream_params['stream_protocol']}://{stream_params['stream_ip']}:{stream_params['stream_port']}"
         else:
             self.debug.send("Invalid stream parameters")
 
+
     def play(self) -> None:
         """
         Play the stream
-        :return:
+        :return None:
         """
         self.is_playing = True
         self.streamer.start(self.stream_url)
@@ -92,15 +122,16 @@ class Viewer(QWidget):
     def stop(self) -> None:
         """
         Stop the stream
-        :return:
+        :return None:
         """
         self.is_playing = False
         self.streamer.stop()
+        self.load_connection_established_view()
         self.stop_pressed_signal.emit()
 
 
-    @QtCore.Slot()
-    def on_toggle_button_clicked(self) -> None:
+
+    def toggle_view(self) -> None:
         try:
             if not self.is_playing:
                 self.play()

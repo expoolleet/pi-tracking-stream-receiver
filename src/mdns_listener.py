@@ -1,7 +1,11 @@
 ﻿import ast
+import socket
+
 from PySide6.QtCore import Signal, QObject
 
-import socket
+from src.tools import DebugEmitter
+
+
 def get_local_ip(server_ip):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.settimeout(0)
@@ -12,6 +16,7 @@ def get_local_ip(server_ip):
         s.close()
     return IP
 
+
 class MDNSListener(QObject):
 
     service_added_signal = Signal(dict)
@@ -19,6 +24,7 @@ class MDNSListener(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.info = None
+        self.debug = DebugEmitter()
 
 
     def add_service(self, zeroconf, service_type, name) -> None:
@@ -49,12 +55,13 @@ class MDNSListener(QObject):
                 "stream_size": stream_size,
                 "camera_size": camera_size,
             }
-
             self.service_added_signal.emit(data)
-            print(data)
+            self.debug.send(data)
+
 
     def update_service(self, zeroconf, service_type, name) -> None:
         return
+
 
     def remove_service(self, zeroconf, service_type, name) -> None:
         return

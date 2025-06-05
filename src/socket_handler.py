@@ -6,18 +6,16 @@ import numpy as np
 
 from PySide6.QtCore import Signal, QObject
 
-from .tools import DebugEmitter
-from .commands import Command
+from src.tools import DebugEmitter
+from src.command import Command
 
 SOCKET_BUFFER_SIZE = 1024
 MAX_RECONNECT_ATTEMPTS = 3
 
-SERVER_IP = "10.20.1.1"
-SERVER_PORT = 8001
-
 class SocketData:
     command = ""
     data = {}
+
 
 class SocketHandler(QObject):
 
@@ -37,6 +35,7 @@ class SocketHandler(QObject):
         return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
+
     def encode_data(self, command, data) -> bytes:
         packet = {
             "command": command,
@@ -46,48 +45,47 @@ class SocketHandler(QObject):
         return raw_data
 
 
-    def decode_data(self, raw_data):
+    def decode_data(self, data) -> list[dict]:
         try:
-            data_str = raw_data.decode('utf-8')
-            data = json.loads(data_str)
-            if "data" not in data or data["data"] is None:
-                return data.get("message", "")
+            if not data or data == b'':
+                return None
+            if b"\n" in data:
+                messages = []
+                while b"\n" in data:
+                    line, data = data.split(b"\n", 1)
+                    message = json.loads(line.decode("utf-8"))
+                    messages.append(message)
+                return  messages
             else:
-                return data.get("message", ""), data["data"]
+                return [json.loads(data.decode("utf-8"))]
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
             self.debug.send(f"Failed to decode server response: {e}")
             return None
 
 
-    def handle_message(self, message) -> None:
-        self.debug.send(f"server sent: {message}")
-        if "roi" in message:
-            received_roi = message["roi"]
-            self.update_roi_signal.emit(received_roi)
-        elif "command" in message:
-            print(message["command"], Command.STOP_TRACKING)
-            if message["command"] == Command.STOP_TRACKING:
-                self.stop_tracking_signal.emit()
-        else:
-            self.debug.send(f"Received unknown message: {message}")
+    def handle_messages(self, messages) -> None:
+        for message in messages:
+            self.debug.send(f"server sent: {message}")
+            if "roi" in message:
+                received_roi = message["roi"]
+                self.update_roi_signal.emit(received_roi)
+            elif "command" in message:
+                if message["command"] == Command.STOP_TRACKING:
+                    self.stop_tracking_signal.emit()
+            else:
+                self.debug.send(f"Received unknown message: {message}")
 
 
     def receive(self) -> None:
         while True:
             try:
                 data = self.socket.recv(SOCKET_BUFFER_SIZE)
-                if not data:
-                    pass
-                if b"\n" in data:
-                    while b"\n" in data:
-                        line, data = data.split(b"\n", 1)
-                        message = json.loads(line.decode("utf-8"))
-                        self.handle_message(message)
-                else:
-                    message = json.loads(data.decode("utf-8"))
-                    self.handle_message(message)
+                messages = self.decode_data(data)
+                if data:
+                    self.handle_messages(messages)
             except json.JSONDecodeError:
                 self.debug.send(f"Received non-JSON data: {data.decode('utf-8').strip()}")
+                time.sleep(1)
             except OSError as e:
                 if e.winerror == 10057:
                     pass
@@ -105,23 +103,34 @@ class SocketHandler(QObject):
                 self.debug.send("No socket has been initialized")
         except (socket.error, BrokenPipeError) as e:
             self.debug.send(f"Socket error: {e}")
-            if self.reconnect():
-                self.send(command, data)
-            else:
-                self.debug.send("Failed to reconnect to server")
 
 
-    def reconnect(self) -> bool:
+    def reconnect(self, ip, port) -> bool:
         self.socket.close()
         self.socket = self.create()
         timeout = 1
         for attempt in range(1, MAX_RECONNECT_ATTEMPTS + 1):
             try:
                 self.debug.send(f"Trying to reconnect... Attempt {attempt}/{MAX_RECONNECT_ATTEMPTS}")
-                self.socket.connect((SERVER_IP, SERVER_PORT))
+                self.socket.connect((ip, port))
                 self.debug.send("Reconnected successfully")
                 return True
             except socket.error as e:
                 self.debug.send(f"Reconnection failed: {e}")
                 time.sleep((timeout + attempt) * 2)
         return False
+
+
+    def connect(self, ip, port) -> None:
+        try:
+            self.debug.send(f"Trying to connect to the server...")
+            self.socket.connect((ip, port))
+        except Exception as e:
+            print(f"Error occurred when connected to server: {e}")
+
+
+    def disconnect(self) -> None:
+        self.socket.close()
+        self.socket = self.create()
+
+

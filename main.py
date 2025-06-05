@@ -2,8 +2,8 @@
 import sys
 
 from PySide6 import QtCore
-from PySide6.QtWidgets import QApplication, QWidget
-from PySide6.QtCore import Qt, QObject, QEvent, QRegularExpression
+from PySide6.QtWidgets import QApplication, QWidget, QMessageBox
+from PySide6.QtCore import Qt, QObject, QEvent, QRegularExpression, Signal
 from PySide6.QtGui import QPixmap, QMouseEvent, QRegularExpressionValidator
 
 import datetime
@@ -14,10 +14,9 @@ from src.socket_handler import SocketHandler
 from src.streamer import Streamer
 from src.viewer import Viewer
 from src.tools import numpy_to_pixmap, scale_pixmap, DebugEmitter
-from src.commands import Command
+from src.command import Command
 from src.zeroconf_handler import ZeroconfHandler
 from src.widgets_text import *
-
 
 # Important:
 # You need to run the following command to generate the ui_form.py file
@@ -25,7 +24,12 @@ from src.widgets_text import *
 
 from ui_form import Ui_Widget
 
+
 class Widget(QWidget):
+
+    load_start_state_signal = Signal()
+    toggle_view_signal = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.ui = Ui_Widget()
@@ -37,18 +41,16 @@ class Widget(QWidget):
         self.ui.line_edit_c2.setValidator(validator)
         self.ui.line_edit_c3.setValidator(validator)
 
-        self.streamer = Streamer(self)
+        self.streamer = Streamer(self, stream_size=(640, 480))
 
         self.viewer = Viewer(self, self.streamer)
         self.viewer.frame_ready_signal.connect(self.update_view_label)
         self.viewer.play_pressed_signal.connect(self.update_gui_on_play)
         self.viewer.stop_pressed_signal.connect(self.update_gui_on_stop)
-
-
         self.roi_handler = ROIHandler(self, self.ui.viewLabel)
         self.roi_handler.enable_roi_selecting()
         self.roi_handler.roi_selected_signal.connect(self.enable_tracking)
-        self.update_view_label = self.roi_handler.draw_roi_on_frame(self.update_view_label) # wrapper
+        self.update_view_label = self.roi_handler.draw_roi_on_frame(self.update_view_label)  # wrapper
         self.viewer.stop_pressed_signal.connect(self.roi_handler.reset_roi)
 
         self.viewLabel_event_filter = MouseEventFilter(
@@ -68,12 +70,19 @@ class Widget(QWidget):
         self.zeroconf_handler = ZeroconfHandler()
         self.zeroconf_handler.listener.service_added_signal.connect(self.viewer.change_stream_url)
         self.zeroconf_handler.listener.service_added_signal.connect(self.on_service_added)
+        self.zeroconf_handler.listener.service_added_signal.connect(lambda params: self.viewer.load_connection_established_view())
+
+        self.start_state = self.capture_start_state()
+
+        self.load_start_state_signal.connect(self.load_start_state)
 
 
     def on_service_added(self, params) -> None:
         self.ui.connection_label.setText(f"{CONNECTED_TO} {params['server_ip']}:{params['server_port']}")
         self.ui.toggle_button.setEnabled(True)
         self.ui.tracking_group_box.setEnabled(True)
+        self.socket_handler.connect(params["server_ip"], params["server_port"])
+        self.socket_handler.send(Command.CONNECT_TO_SERVER)
 
 
     def enable_tracking(self, roi) -> None:
@@ -96,14 +105,16 @@ class Widget(QWidget):
 
     def update_gui_on_play(self) -> None:
         self.ui.toggle_button.setText(STOP_TEXT)
+        self.ui.params_group_box.setEnabled(False)
 
 
     def update_gui_on_stop(self) -> None:
         self.ui.toggle_button.setText(PLAY_TEXT)
+        self.ui.params_group_box.setEnabled(True)
 
 
     def resize_pixmap(self, pixmap) -> QPixmap:
-        scaled_pixmap = scale_pixmap(self.ui.viewLabel.size(), pixmap) # fix later
+        scaled_pixmap = scale_pixmap(self.ui.viewLabel.size(), pixmap)  # fix later
         return scaled_pixmap
 
 
@@ -118,12 +129,60 @@ class Widget(QWidget):
         e.accept()
 
 
+    def capture_start_state(self) -> dict:
+        return {
+            "connect_button": {
+                "text": self.ui.connect_button.text(),
+                "enabled": self.ui.connect_button.isEnabled()
+            },
+            "toggle_button": {
+                "text": self.ui.toggle_button.text(),
+                "enabled": self.ui.toggle_button.isEnabled()
+            },
+            "reboot_server_button": {
+                "text": self.ui.reboot_server_button.text(),
+                "enabled": self.ui.reboot_server_button.isEnabled()
+            },
+            "kalman_group_box": {
+                "enabled": self.ui.kalman_group_box.isEnabled()
+            },
+            "params_group_box": {
+                "enabled": self.ui.params_group_box.isEnabled()
+            },
+            "cfs_group_box": {
+                "enabled": self.ui.cfs_group_box.isEnabled()
+            },
+            "connection_label": {
+                "text": self.ui.connection_label.text()
+            }
+        }
+
+
+    def load_start_state(self):
+        self.ui.connect_button.setText(self.start_state["connect_button"]["text"])
+        self.ui.connect_button.setEnabled(self.start_state["connect_button"]["enabled"])
+        self.ui.toggle_button.setText(self.start_state["toggle_button"]["text"])
+        self.ui.toggle_button.setEnabled(self.start_state["toggle_button"]["enabled"])
+        self.ui.reboot_server_button.setText(self.start_state["reboot_server_button"]["text"])
+        self.ui.reboot_server_button.setEnabled(self.start_state["reboot_server_button"]["enabled"])
+        self.ui.kalman_group_box.setEnabled(self.start_state["kalman_group_box"]["enabled"])
+        self.ui.params_group_box.setEnabled(self.start_state["params_group_box"]["enabled"])
+        self.ui.cfs_group_box.setEnabled(self.start_state["cfs_group_box"]["enabled"])
+        self.ui.connection_label.setText(self.start_state["connection_label"]["text"])
+
+
     @QtCore.Slot()
     def on_connect_button_clicked(self) -> None:
         self.zeroconf_handler.browse()
         self.ui.connection_label.setText(CONNECTION_AWATING)
         self.ui.connect_button.setEnabled(False)
+        self.ui.reboot_server_button.setEnabled(True)
         self.ui.cfs_group_box.setEnabled(True)
+
+
+    @QtCore.Slot()
+    def on_toggle_button_clicked(self) -> None:
+        self.toggle_view_signal.emit()
 
 
     @QtCore.Slot()
@@ -131,6 +190,16 @@ class Widget(QWidget):
         self.socket_handler.send(Command.STOP_TRACKING)
         self.ui.tracker_stop_button.setEnabled(False)
         self.ui.kalman_group_box.setEnabled(True)
+
+
+    @QtCore.Slot()
+    def on_reboot_server_button_clicked(self) -> None:
+        reply = QMessageBox.question(self, "Streamer", RESTART_SERVER, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            self.load_start_state_signal.emit()
+            self.socket_handler.send(Command.REBOOT_SERVER)
+            self.socket_handler.disconnect()
+
 
 
 class MouseEventFilter(QObject):

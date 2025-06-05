@@ -104,7 +104,6 @@ class ROIHandler(QObject):
     def reset_roi(self) -> None:
         self.change_state(ROIState.NONE)
         self.roi = INIT_ROI
-        print("reset")
 
 
     def on_left_click_handle_roi(self, pos) -> None:
@@ -127,7 +126,6 @@ class ROIHandler(QObject):
 
                 self.start_point = [max(0, min(int((x - offset_x) * width_ratio), int(pixmap.width() * width_ratio) - 1)),
                                   max(0, min(int((y - offset_y) * height_ratio), int(pixmap.height() * height_ratio) - 1))]
-
                 self.end_point = self.start_point
             else:
                 self.calculate_roi()
@@ -183,7 +181,6 @@ class ROIHandler(QObject):
             p1, p2 = self.get_roi_points()
             return self.add_roi_to_frame(frame, p1, p2, FAILED_ROI_COLOR)
         return frame
-
 
 
     def draw_roi_on_frame(self, func) -> None:

@@ -34,6 +34,11 @@ class Streamer(QWidget):
 
 
     def start(self, url: str) -> None:
+        """
+        Starts receiving ffmpeg stream on given url
+        :param url:
+        :return None:
+        """
         self.ffmpeg_process = (
             ffmpeg
             .input(url, **input_options)
@@ -47,12 +52,20 @@ class Streamer(QWidget):
 
 
     def stop(self) -> None:
+        """
+        Stops the ffmpeg stream
+        :return None:
+        """
         if self.ffmpeg_process:
             self.ffmpeg_process.kill()
             self.ffmpeg_process = None
 
 
     def monitor_stderr(self) -> None:
+        """
+        Displays in debug window stderr messages
+        :return None:
+        """
         try:
             while self.ffmpeg_process is not None:
                 line = self.ffmpeg_process.stderr.readline()
@@ -66,6 +79,10 @@ class Streamer(QWidget):
 
 
     def read_stream(self) -> None:
+        """
+        Reads the stream pipe than saving the current frame
+        :return None:
+        """
         while True:
             try:
                 if self.ffmpeg_process:
@@ -92,5 +109,9 @@ class Streamer(QWidget):
 
 
     def get_current_frame(self) -> np.ndarray:
+        """
+        Gets the current frame
+        :return:
+        """
         with self.stream_lock:
             return self.current_frame

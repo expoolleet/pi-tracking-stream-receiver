@@ -1,4 +1,5 @@
-﻿PLAY_TEXT = "Проигрывать стрим"
-STOP_TEXT = "Остановить стрим"
+﻿PLAY_TEXT = "Включить поток"
+STOP_TEXT = "Остановить поток"
 CONNECTION_AWATING = "Ожидание сервера..."
 CONNECTED_TO = "Подключено к"
+RESTART_SERVER = "Перезапустить сервер?"

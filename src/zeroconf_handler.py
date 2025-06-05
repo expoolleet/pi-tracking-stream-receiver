@@ -12,4 +12,8 @@ class ZeroconfHandler(QObject):
         self.listener = MDNSListener()
 
     def browse(self) -> None:
+        """
+        Starts browsing for available services.
+        :return:
+        """
         ServiceBrowser(self.zeroconf, SERVICE_TYPE, self.listener)
