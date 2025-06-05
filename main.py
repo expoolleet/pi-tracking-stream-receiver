@@ -11,7 +11,7 @@ import numpy as np
 
 from src.roi_handler import ROIHandler
 from src.socket_handler import SocketHandler
-from src.streamer import Streamer
+from src.stream_receiver import StreamReceiver
 from src.viewer import Viewer
 from src.tools import numpy_to_pixmap, scale_pixmap, DebugEmitter
 from src.command import Command
@@ -40,16 +40,21 @@ class Widget(QWidget):
         self.ui.line_edit_c1.setValidator(validator)
         self.ui.line_edit_c2.setValidator(validator)
         self.ui.line_edit_c3.setValidator(validator)
+        self.ui.bitrate_line_edit.setValidator(validator)
 
-        self.streamer = Streamer(self, stream_size=(640, 480))
+        self.stream_receiver = StreamReceiver(self)
 
-        self.viewer = Viewer(self, self.streamer)
+        self.viewer = Viewer(self, self.stream_receiver)
         self.viewer.frame_ready_signal.connect(self.update_view_label)
         self.viewer.play_pressed_signal.connect(self.update_gui_on_play)
+        self.viewer.play_pressed_signal.connect(self.start_stream)
         self.viewer.stop_pressed_signal.connect(self.update_gui_on_stop)
+        self.viewer.stop_pressed_signal.connect(self.stop_stream)
+
         self.roi_handler = ROIHandler(self, self.ui.viewLabel)
         self.roi_handler.enable_roi_selecting()
         self.roi_handler.roi_selected_signal.connect(self.enable_tracking)
+
         self.update_view_label = self.roi_handler.draw_roi_on_frame(self.update_view_label)  # wrapper
         self.viewer.stop_pressed_signal.connect(self.roi_handler.reset_roi)
 
@@ -76,13 +81,20 @@ class Widget(QWidget):
 
         self.load_start_state_signal.connect(self.load_start_state)
 
+        self.ui.resolution_combo_box.addItem("720p")
+        self.ui.resolution_combo_box.addItem("480p")
+        self.ui.resolution_combo_box.addItem("360p")
+        self.ui.resolution_combo_box.addItem("240p")
+        self.ui.resolution_combo_box.addItem("144p")
+        self.ui.resolution_combo_box.currentIndexChanged.connect(self.stream_receiver.change_stream_size_with_index)
+
 
     def on_service_added(self, params) -> None:
         self.ui.connection_label.setText(f"{CONNECTED_TO} {params['server_ip']}:{params['server_port']}")
         self.ui.toggle_button.setEnabled(True)
         self.ui.tracking_group_box.setEnabled(True)
         self.socket_handler.connect(params["server_ip"], params["server_port"])
-        self.socket_handler.send(Command.CONNECT_TO_SERVER)
+        self.toggle_view_signal.emit()
 
 
     def enable_tracking(self, roi) -> None:
@@ -96,6 +108,18 @@ class Widget(QWidget):
         self.socket_handler.send(Command.UPDATE_TRACKING, data)
         self.ui.tracker_stop_button.setEnabled(True)
         self.ui.kalman_group_box.setEnabled(False)
+
+
+    def start_stream(self) -> None:
+        data = {
+            "stream_size": self.stream_receiver.get_stream_size(),
+            "bitrate": int(self.ui.bitrate_line_edit.text())
+        }
+        self.socket_handler.send(Command.START_STREAM, data)
+
+
+    def stop_stream(self) -> None:
+        self.socket_handler.send(Command.STOP_STREAM)
 
 
     def update_view_label(self, frame: np.ndarray) -> None:
@@ -124,8 +148,8 @@ class Widget(QWidget):
 
 
     def closeEvent(self, e) -> None:
-        if self.streamer:
-            self.streamer.stop()
+        if self.stream_receiver:
+            self.stream_receiver.stop()
         e.accept()
 
 
@@ -194,7 +218,7 @@ class Widget(QWidget):
 
     @QtCore.Slot()
     def on_reboot_server_button_clicked(self) -> None:
-        reply = QMessageBox.question(self, "Streamer", RESTART_SERVER, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        reply = QMessageBox.question(self, "Stream Receiver", RESTART_SERVER, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.load_start_state_signal.emit()
             self.socket_handler.send(Command.REBOOT_SERVER)

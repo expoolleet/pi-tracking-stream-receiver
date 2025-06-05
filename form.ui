@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1000</width>
-    <height>800</height>
+    <width>1052</width>
+    <height>894</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Streamer</string>
+   <string>Stream Receiver</string>
   </property>
   <property name="windowOpacity">
    <double>1.000000000000000</double>
@@ -103,7 +103,7 @@
        <property name="maximumSize">
         <size>
          <width>16777215</width>
-         <height>350</height>
+         <height>300</height>
         </size>
        </property>
        <property name="title">
@@ -381,7 +381,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QComboBox" name="comboBox"/>
+                <widget class="QComboBox" name="resolution_combo_box"/>
                </item>
                <item>
                 <widget class="QLabel" name="label_3">
@@ -397,7 +397,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QLineEdit" name="lineEdit">
+                <widget class="QLineEdit" name="bitrate_line_edit">
                  <property name="font">
                   <font>
                    <pointsize>11</pointsize>

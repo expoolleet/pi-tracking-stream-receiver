@@ -20,17 +20,35 @@ input_options = {
 
 TIME_OUT = 1
 
-class Streamer(QWidget):
-    def __init__(self, parent=None, stream_size=(640, 480)):
+
+class StreamSize:
+    SIZE_720 = (0, (960, 720))
+    SIZE_480 = (1, (640, 480))
+    SIZE_360 = (2, (480, 360))
+    SIZE_240 = (3, (320, 240))
+    SIZE_144 = (4, (192, 144))
+
+class StreamReceiver(QWidget):
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.ffmpeg_process = None
-        self.current_frame = np.zeros((stream_size[1], stream_size[0], 3), dtype=np.uint8)
+
         self.stream_thread = None
         self.err_thread = None
-        self.stream_width = stream_size[0]
-        self.stream_height = stream_size[1]
+        self.current_frame = np.zeros((128, 128, 3), dtype=np.uint8)
+        self.stream_width = 0
+        self.stream_height = 0
         self.stream_lock = threading.Lock()
         self.debug = DebugEmitter()
+
+        self.set_stream_size(StreamSize.SIZE_720[1])
+
+
+    def set_stream_size(self, res):
+        self.current_frame = np.zeros((res[1], res[0], 3), dtype=np.uint8)
+        self.stream_width = res[0]
+        self.stream_height = res[1]
+        self.debug.send(f"Stream resolution is set to {res}")
 
 
     def start(self, url: str) -> None:
@@ -83,12 +101,17 @@ class Streamer(QWidget):
         Reads the stream pipe than saving the current frame
         :return None:
         """
+        if self.stream_width == 0 or self.stream_height == 0:
+            self.debug.send("Stream size was not set, exiting...")
+            self.stop()
+
         while True:
             try:
                 if self.ffmpeg_process:
                     data_size = self.stream_width * self.stream_height * 3
                     raw_frame = self.ffmpeg_process.stdout.read(data_size)
                     self.ffmpeg_process.stdout.flush()
+
                     if raw_frame is None or len(raw_frame) != data_size:
                         self.debug.send("Raw frame is empty or broken, exiting...")
                         self.stop()
@@ -115,3 +138,20 @@ class Streamer(QWidget):
         """
         with self.stream_lock:
             return self.current_frame
+
+
+    def change_stream_size_with_index(self, index) -> None:
+        if index == StreamSize.SIZE_720[0]:
+            self.set_stream_size(StreamSize.SIZE_720[1])
+        elif index == StreamSize.SIZE_480[0]:
+            self.set_stream_size(StreamSize.SIZE_480[1])
+        elif index == StreamSize.SIZE_360[0]:
+            self.set_stream_size(StreamSize.SIZE_360[1])
+        elif index == StreamSize.SIZE_240[0]:
+            self.set_stream_size(StreamSize.SIZE_240[1])
+        else:
+            self.set_stream_size(StreamSize.SIZE_144[1])
+
+
+    def get_stream_size(self) -> tuple[int, int]:
+        return self.stream_width, self.stream_height

@@ -4,28 +4,17 @@ from PySide6.QtCore import Signal
 from PySide6.QtGui import QPixmap
 
 from src.tools import numpy_to_pixmap, DebugEmitter
-from src.streamer import Streamer
+from src.stream_receiver import StreamReceiver
 
 import threading
 import numpy as np
 import time
-from enum import Enum
 
 NO_CONNECTION_IMAGE = "src/img/no_connection.png"
 CONNECTION_ESTABLISHED_IMAGE = "src/img/connection_established.png"
 
 TARGET_FPS = 30
 TARGET_FRAME_TIME = 1 / TARGET_FPS
-
-
-class StreamResolution(Enum):
-    RES_1080p = 1
-    RES_900p = 2
-    RES_720p = 3
-    RES_480p = 4
-    RES_360p = 5
-    RES_240p = 6
-    RES_144p = 7
 
 
 class Viewer(QWidget):
@@ -35,7 +24,7 @@ class Viewer(QWidget):
     stop_pressed_signal = Signal()
 
 
-    def __init__(self, parent=None, streamer: Streamer = None):
+    def __init__(self, parent=None, stream_receiver: StreamReceiver = None):
         super().__init__(parent)
         self.parent = parent
         self.ui = parent.ui
@@ -43,8 +32,8 @@ class Viewer(QWidget):
         self.load_no_connection_view()
         self.current_frame = self.ui.viewLabel.pixmap()
         self.view_thread = None
-        self.streamer = streamer
-        self.stream_size = (streamer.stream_width, streamer.stream_height)
+        self.stream_receiver = stream_receiver
+        self.stream_size = (stream_receiver.stream_width, stream_receiver.stream_height)
         self.is_playing = False
         self.debug = DebugEmitter()
         self.stream_url = None
@@ -83,7 +72,7 @@ class Viewer(QWidget):
         while self.is_playing:
             start_time = time.time()
             try:
-                frame = self.streamer.get_current_frame()
+                frame = self.stream_receiver.get_current_frame()
                 qpixmap = numpy_to_pixmap(frame)
                 self.current_frame = qpixmap
                 self.frame_ready_signal.emit(frame)
@@ -113,7 +102,7 @@ class Viewer(QWidget):
         :return None:
         """
         self.is_playing = True
-        self.streamer.start(self.stream_url)
+        self.stream_receiver.start(self.stream_url)
         self.view_thread = threading.Thread(target=self.update, daemon=True)
         self.view_thread.start()
         self.play_pressed_signal.emit()
@@ -125,7 +114,7 @@ class Viewer(QWidget):
         :return None:
         """
         self.is_playing = False
-        self.streamer.stop()
+        self.stream_receiver.stop()
         self.load_connection_established_view()
         self.stop_pressed_signal.emit()
 

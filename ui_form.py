@@ -24,7 +24,7 @@ class Ui_Widget(object):
     def setupUi(self, Widget):
         if not Widget.objectName():
             Widget.setObjectName(u"Widget")
-        Widget.resize(1000, 800)
+        Widget.resize(1052, 894)
         Widget.setMinimumSize(QSize(1000, 800))
         Widget.setWindowOpacity(1.000000000000000)
         self.horizontalLayout = QHBoxLayout(Widget)
@@ -65,7 +65,7 @@ class Ui_Widget(object):
         self.groupBox_2 = QGroupBox(Widget)
         self.groupBox_2.setObjectName(u"groupBox_2")
         self.groupBox_2.setMinimumSize(QSize(0, 0))
-        self.groupBox_2.setMaximumSize(QSize(16777215, 350))
+        self.groupBox_2.setMaximumSize(QSize(16777215, 300))
         self.groupBox_2.setFlat(False)
         self.horizontalLayout_4 = QHBoxLayout(self.groupBox_2)
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
@@ -194,10 +194,10 @@ class Ui_Widget(object):
 
         self.verticalLayout_10.addWidget(self.label_2)
 
-        self.comboBox = QComboBox(self.params_group_box)
-        self.comboBox.setObjectName(u"comboBox")
+        self.resolution_combo_box = QComboBox(self.params_group_box)
+        self.resolution_combo_box.setObjectName(u"resolution_combo_box")
 
-        self.verticalLayout_10.addWidget(self.comboBox)
+        self.verticalLayout_10.addWidget(self.resolution_combo_box)
 
         self.label_3 = QLabel(self.params_group_box)
         self.label_3.setObjectName(u"label_3")
@@ -205,12 +205,12 @@ class Ui_Widget(object):
 
         self.verticalLayout_10.addWidget(self.label_3)
 
-        self.lineEdit = QLineEdit(self.params_group_box)
-        self.lineEdit.setObjectName(u"lineEdit")
-        self.lineEdit.setFont(font)
-        self.lineEdit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.bitrate_line_edit = QLineEdit(self.params_group_box)
+        self.bitrate_line_edit.setObjectName(u"bitrate_line_edit")
+        self.bitrate_line_edit.setFont(font)
+        self.bitrate_line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.verticalLayout_10.addWidget(self.lineEdit)
+        self.verticalLayout_10.addWidget(self.bitrate_line_edit)
 
 
         self.verticalLayout_9.addWidget(self.params_group_box)
@@ -299,7 +299,7 @@ class Ui_Widget(object):
     # setupUi
 
     def retranslateUi(self, Widget):
-        Widget.setWindowTitle(QCoreApplication.translate("Widget", u"Streamer", None))
+        Widget.setWindowTitle(QCoreApplication.translate("Widget", u"Stream Receiver", None))
         self.viewLabel.setText("")
         self.connection_label.setText(QCoreApplication.translate("Widget", u"\u041d\u0435\u0442 \u0441\u043e\u0435\u0434\u0438\u043d\u0435\u043d\u0438\u044f \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u043e\u043c", None))
         self.groupBox_2.setTitle("")
@@ -317,8 +317,8 @@ class Ui_Widget(object):
         self.params_group_box.setTitle("")
         self.label_2.setText(QCoreApplication.translate("Widget", u"\u0420\u0430\u0437\u0440\u0435\u0448\u0435\u043d\u0438\u0435 \u043f\u043e\u0442\u043e\u043a\u0430", None))
         self.label_3.setText(QCoreApplication.translate("Widget", u"\u0411\u0438\u0442\u0440\u0435\u0439\u0442 (\u043a\u0431\u0438\u0442/\u0441)", None))
-        self.lineEdit.setText(QCoreApplication.translate("Widget", u"2000", None))
-        self.lineEdit.setPlaceholderText(QCoreApplication.translate("Widget", u"0", None))
+        self.bitrate_line_edit.setText(QCoreApplication.translate("Widget", u"2000", None))
+        self.bitrate_line_edit.setPlaceholderText(QCoreApplication.translate("Widget", u"0", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_5), QCoreApplication.translate("Widget", u"\u041f\u0430\u0440\u0430\u043c\u0435\u0442\u0440\u044b", None))
         self.cfs_group_box.setTitle("")
         self.line_edit_c1.setPlaceholderText(QCoreApplication.translate("Widget", u"C1", None))
