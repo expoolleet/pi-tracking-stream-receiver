@@ -21,9 +21,11 @@ class SocketHandler(QObject):
 
     update_roi_signal = Signal(np.ndarray)
     stop_tracking_signal = Signal()
+    disconnect_from_server_signal = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.is_connected = False
         self.socket = self.create()
         self.receive_thread = threading.Thread(target=self.receive, daemon=True)
         self.receive_thread.start()
@@ -68,10 +70,15 @@ class SocketHandler(QObject):
             self.debug.send(f"server sent: {message}")
             if "roi" in message:
                 received_roi = message["roi"]
-                self.update_roi_signal.emit(received_roi)
+                try:
+                    self.update_roi_signal.emit(received_roi)
+                except RuntimeError:
+                    self.debug.send("Warning: signal 'update_roi_signal' has been deleted because application is closed")
             elif "command" in message:
                 if message["command"] == Command.STOP_TRACKING:
                     self.stop_tracking_signal.emit()
+                elif message["command"] == Command.DISCONNECT:
+                    self.disconnect_from_server_signal.emit()
             else:
                 self.debug.send(f"Received unknown message: {message}")
 
@@ -95,12 +102,12 @@ class SocketHandler(QObject):
 
     def send(self, command: str, data: dict = {}) -> None:
         try:
-            if self.socket is not None:
+            if self.is_connected:
                 encoded_data = self.encode_data(command, data)
                 self.debug.send(f"socket sent: {command}; {encoded_data}")
                 self.socket.send(encoded_data)
             else:
-                self.debug.send("No socket has been initialized")
+                self.debug.send(f"No socket connection to the server has been set, command '{command}' was not sent")
         except (socket.error, BrokenPipeError) as e:
             self.debug.send(f"Socket error: {e}")
 
@@ -123,8 +130,11 @@ class SocketHandler(QObject):
 
     def connect(self, ip, port) -> None:
         try:
+            if self.is_connected:
+                self.disconnect()
             self.debug.send(f"Trying to connect to the server...")
             self.socket.connect((ip, port))
+            self.is_connected = True
         except Exception as e:
             print(f"Error occurred when connected to server: {e}")
 
@@ -132,5 +142,6 @@ class SocketHandler(QObject):
     def disconnect(self) -> None:
         self.socket.close()
         self.socket = self.create()
+        self.is_connected = False
 
 

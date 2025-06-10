@@ -9,12 +9,13 @@ from src.stream_receiver import StreamReceiver
 import threading
 import numpy as np
 import time
-
-NO_CONNECTION_IMAGE = "src/img/no_connection.png"
-CONNECTION_ESTABLISHED_IMAGE = "src/img/connection_established.png"
+from pathlib import Path
 
 TARGET_FPS = 30
 TARGET_FRAME_TIME = 1 / TARGET_FPS
+
+NO_CONNECTION_IMAGE = Path(__file__).parent / "img/no_connection.png"
+CONNECTION_ESTABLISHED_IMAGE = Path(__file__).parent  / "img/connection_established.png"
 
 
 class Viewer(QWidget):
@@ -28,18 +29,15 @@ class Viewer(QWidget):
         super().__init__(parent)
         self.parent = parent
         self.ui = parent.ui
-
-        self.load_no_connection_view()
-        self.current_frame = self.ui.viewLabel.pixmap()
+        self.current_frame = None
         self.view_thread = None
         self.stream_receiver = stream_receiver
-        self.stream_size = (stream_receiver.stream_width, stream_receiver.stream_height)
         self.is_playing = False
-        self.debug = DebugEmitter()
         self.stream_url = None
 
-        self.parent.load_start_state_signal.connect(self.load_connection_established_view)
-        self.parent.toggle_view_signal.connect(self.toggle_view)
+        self.debug = DebugEmitter()
+
+        self.load_no_connection_view()
 
 
     def load_connection_established_view(self):
@@ -57,11 +55,11 @@ class Viewer(QWidget):
         """
         try:
             no_connection = QPixmap(view_image)
-            self.ui.viewLabel.setPixmap(no_connection)
+            if no_connection.isNull():
+                raise Exception(f"Specified image path is incorrect {view_image}")
+            self.ui.view_label.setPixmap(no_connection)
         except Exception as e:
-            self.debug.send(f"Error loading default view: {e}")
-            black_frame = np.zeros((self.stream_size[1], self.stream_size[0], 3), dtype=np.uint8)
-            self.ui.viewLabel.setPixmap(numpy_to_pixmap(black_frame))
+            self.debug.send(f"Error loading image view: {e}")
 
 
     def update(self) -> None:
@@ -73,8 +71,9 @@ class Viewer(QWidget):
             start_time = time.time()
             try:
                 frame = self.stream_receiver.get_current_frame()
-                qpixmap = numpy_to_pixmap(frame)
-                self.current_frame = qpixmap
+                if frame is None:
+                    continue
+                self.current_frame = frame
                 self.frame_ready_signal.emit(frame)
             except Exception as e:
                 self.debug.send(f"Error updating view: {e}")

@@ -5,6 +5,7 @@ import subprocess
 import numpy as np
 
 from PySide6.QtWidgets import QWidget
+from PySide6.QtCore import Signal
 
 from src.tools import DebugEmitter
 
@@ -21,6 +22,8 @@ input_options = {
 TIME_OUT = 1
 
 
+
+
 class StreamSize:
     SIZE_720 = (0, (960, 720))
     SIZE_480 = (1, (640, 480))
@@ -28,27 +31,37 @@ class StreamSize:
     SIZE_240 = (3, (320, 240))
     SIZE_144 = (4, (192, 144))
 
+
 class StreamReceiver(QWidget):
+
+    change_stream_size_with_index_signal = Signal(int)
+
+    default_stream_size = StreamSize.SIZE_720[1]
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.ffmpeg_process = None
 
         self.stream_thread = None
         self.err_thread = None
-        self.current_frame = np.zeros((128, 128, 3), dtype=np.uint8)
+        self.current_frame = None
         self.stream_width = 0
         self.stream_height = 0
         self.stream_lock = threading.Lock()
         self.debug = DebugEmitter()
 
-        self.set_stream_size(StreamSize.SIZE_720[1])
 
-
-    def set_stream_size(self, res):
-        self.current_frame = np.zeros((res[1], res[0], 3), dtype=np.uint8)
-        self.stream_width = res[0]
-        self.stream_height = res[1]
-        self.debug.send(f"Stream resolution is set to {res}")
+    def set_stream_size(self, size) -> None:
+        """
+        Sets the stream width and height
+        :param size:
+        :return None:
+        """
+        if size == (self.stream_width, self.stream_height):
+            return
+        self.stream_width = size[0]
+        self.stream_height = size[1]
+        self.debug.send(f"Stream resolution is set to {size}")
 
 
     def start(self, url: str) -> None:
@@ -151,6 +164,26 @@ class StreamReceiver(QWidget):
             self.set_stream_size(StreamSize.SIZE_240[1])
         else:
             self.set_stream_size(StreamSize.SIZE_144[1])
+        self.change_stream_size_with_index_signal.emit(index)
+
+
+    def set_default_stream_size(self):
+        self.set_stream_size(self.default_stream_size)
+
+    def get_stream_size_index(self):
+        size = (self.stream_width, self.stream_height)
+        if size == StreamSize.SIZE_720[1]:
+            return StreamSize.SIZE_720[0]
+        elif size == StreamSize.SIZE_480[1]:
+            return StreamSize.SIZE_480[0]
+        elif size == StreamSize.SIZE_360[1]:
+            return StreamSize.SIZE_360[0]
+        elif size == StreamSize.SIZE_240[1]:
+            return StreamSize.SIZE_240[0]
+        elif size == StreamSize.SIZE_144[1]:
+            return StreamSize.SIZE_144[0]
+        else:
+            return -1
 
 
     def get_stream_size(self) -> tuple[int, int]:

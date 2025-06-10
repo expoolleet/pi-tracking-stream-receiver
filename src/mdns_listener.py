@@ -1,4 +1,5 @@
 ﻿import socket
+import ast
 
 from PySide6.QtCore import Signal, QObject
 
@@ -24,6 +25,8 @@ class MDNSListener(QObject):
         super().__init__(parent)
         self.info = None
         self.debug = DebugEmitter()
+        self.is_service_added = False
+        self.data = None
 
 
     def add_service(self, zeroconf, service_type, name) -> None:
@@ -33,21 +36,26 @@ class MDNSListener(QObject):
             stream_protocol = self.info.properties[b"stream_protocol"].decode("utf-8")
             server_port = int(self.info.properties[b"server_port"])
             stream_port = int(self.info.properties[b"stream_port"])
+            decoded_tracking_frame_size = self.info.properties[b"tracking_frame_size"].decode()
+
+            tracking_frame_size = ast.literal_eval(decoded_tracking_frame_size)
 
             if stream_protocol == "UDP":
                 stream_ip = get_local_ip(server_ip)
             else:
                 stream_ip = server_ip
 
-            data = {
+            self.data = {
                 "server_ip": server_ip,
                 "server_port": server_port,
                 "stream_ip": stream_ip,
                 "stream_port": stream_port,
-                "stream_protocol": stream_protocol.lower()
+                "stream_protocol": stream_protocol.lower(),
+                "tracking_frame_size": tracking_frame_size
             }
-            self.service_added_signal.emit(data)
-            self.debug.send(data)
+            self.service_added_signal.emit(self.data)
+            self.debug.send(self.data)
+            self.is_service_added = True
 
 
     def update_service(self, zeroconf, service_type, name) -> None:
