@@ -12,6 +12,7 @@ class ZeroconfHandler(QObject):
         self.listener = MDNSListener()
         self.browser = None
 
+
     def browse(self) -> None:
         """
         Starts browsing for available services or emitting existing data.
@@ -24,20 +25,24 @@ class ZeroconfHandler(QObject):
 
         self.browser = ServiceBrowser(self.zeroconf, SERVICE_TYPE, self.listener)
 
+
     def clear(self) -> None:
         self._clear_browser()
         self._clear_zeroconf()
         self._clear_listener()
+
 
     def _clear_browser(self):
         if self.browser:
             self.browser.cancel()
             self.browser = None
 
+
     def _clear_zeroconf(self):
         if self.zeroconf:
             self.zeroconf.close()
             self.zeroconf = None
+
 
     def _clear_listener(self):
         if self.listener:

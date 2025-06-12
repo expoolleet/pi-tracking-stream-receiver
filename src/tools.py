@@ -27,6 +27,7 @@ def numpy_to_pixmap(array: np.ndarray, color="rgb24") -> QPixmap:
         format = QImage.Format_Grayscale8
         bytes_per_line = w
 
+
     if format == QImage.Format_Invalid or bytes_per_line == 0:
         raise ValueError(f"Unsupported color format: {color}")
 
@@ -81,7 +82,7 @@ class DebugEmitter(QObject):
             self.debug_signal.emit(msg)
             frame = inspect.stack()[1]
             logging.debug(f"{os.path.basename(frame.filename)}:{frame.lineno} - {msg}")
-        except RuntimeError:
+        except (RuntimeError, AttributeError):
             self.debug.send("Warning: signal 'debug_signal' has been deleted because application is closed")
         finally:
             if self.last_message == msg:

@@ -17,8 +17,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGroupBox,
     QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit,
-    QPushButton, QRadioButton, QSizePolicy, QSpacerItem,
-    QTabWidget, QVBoxLayout, QWidget)
+    QPushButton, QRadioButton, QSizePolicy, QSlider,
+    QSpacerItem, QTabWidget, QVBoxLayout, QWidget)
 
 class Ui_Widget(object):
     def setupUi(self, Widget):
@@ -38,6 +38,10 @@ class Ui_Widget(object):
         self.groupBox_4.setFlat(True)
         self.horizontalLayout = QHBoxLayout(self.groupBox_4)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.horizontalSpacer_2 = QSpacerItem(20, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_2)
+
         self.view_label = QLabel(self.groupBox_4)
         self.view_label.setObjectName(u"view_label")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
@@ -47,6 +51,7 @@ class Ui_Widget(object):
         self.view_label.setSizePolicy(sizePolicy)
         self.view_label.setMinimumSize(QSize(0, 0))
         self.view_label.setCursor(QCursor(Qt.CursorShape.CrossCursor))
+        self.view_label.setMouseTracking(True)
 #if QT_CONFIG(tooltip)
         self.view_label.setToolTip(u"")
 #endif // QT_CONFIG(tooltip)
@@ -67,7 +72,7 @@ class Ui_Widget(object):
         sizePolicy1.setHeightForWidth(self.roi_label.sizePolicy().hasHeightForWidth())
         self.roi_label.setSizePolicy(sizePolicy1)
         self.roi_label.setMinimumSize(QSize(350, 0))
-        self.roi_label.setMaximumSize(QSize(16777215, 350))
+        self.roi_label.setMaximumSize(QSize(350, 350))
         self.roi_label.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
 #if QT_CONFIG(tooltip)
         self.roi_label.setToolTip(u"")
@@ -78,6 +83,10 @@ class Ui_Widget(object):
         self.roi_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.horizontalLayout.addWidget(self.roi_label)
+
+        self.horizontalSpacer = QSpacerItem(20, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer)
 
 
         self.verticalLayout_2.addWidget(self.groupBox_4)
@@ -108,11 +117,12 @@ class Ui_Widget(object):
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.controlsBox.sizePolicy().hasHeightForWidth())
         self.controlsBox.setSizePolicy(sizePolicy2)
-        self.controlsBox.setMinimumSize(QSize(0, 220))
+        self.controlsBox.setMinimumSize(QSize(0, 240))
         self.controlsBox.setMaximumSize(QSize(170, 16777215))
         self.controlsBox.setFlat(False)
         self.verticalLayout = QVBoxLayout(self.controlsBox)
         self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalLayout.setContentsMargins(-1, 9, -1, -1)
         self.connect_button = QPushButton(self.controlsBox)
         self.connect_button.setObjectName(u"connect_button")
         self.connect_button.setEnabled(True)
@@ -123,6 +133,16 @@ class Ui_Widget(object):
 
         self.verticalLayout.addWidget(self.connect_button)
 
+        self.cancel_connection_button = QPushButton(self.controlsBox)
+        self.cancel_connection_button.setObjectName(u"cancel_connection_button")
+        self.cancel_connection_button.setEnabled(False)
+
+        self.verticalLayout.addWidget(self.cancel_connection_button)
+
+        self.verticalSpacer_2 = QSpacerItem(20, 5, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.verticalLayout.addItem(self.verticalSpacer_2)
+
         self.toggle_button = QPushButton(self.controlsBox)
         self.toggle_button.setObjectName(u"toggle_button")
         self.toggle_button.setEnabled(False)
@@ -131,6 +151,10 @@ class Ui_Widget(object):
         self.toggle_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         self.verticalLayout.addWidget(self.toggle_button)
+
+        self.verticalSpacer = QSpacerItem(20, 5, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.verticalLayout.addItem(self.verticalSpacer)
 
         self.reboot_server_button = QPushButton(self.controlsBox)
         self.reboot_server_button.setObjectName(u"reboot_server_button")
@@ -153,8 +177,8 @@ class Ui_Widget(object):
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
         self.tabWidget.setSizePolicy(sizePolicy3)
-        self.tabWidget.setMinimumSize(QSize(0, 235))
-        self.tabWidget.setMaximumSize(QSize(400, 16777215))
+        self.tabWidget.setMinimumSize(QSize(0, 280))
+        self.tabWidget.setMaximumSize(QSize(420, 16777215))
         self.tabWidget.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
         self.tabWidget.setDocumentMode(True)
         self.tabWidget.setTabsClosable(False)
@@ -167,7 +191,7 @@ class Ui_Widget(object):
         self.tracking_group_box.setObjectName(u"tracking_group_box")
         self.tracking_group_box.setEnabled(True)
         self.tracking_group_box.setMaximumSize(QSize(16777215, 16777215))
-        self.tracking_group_box.setAlignment(Qt.AlignmentFlag.AlignLeading|Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignTop)
+        self.tracking_group_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.tracking_group_box.setFlat(False)
         self.verticalLayout_5 = QVBoxLayout(self.tracking_group_box)
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
@@ -175,13 +199,14 @@ class Ui_Widget(object):
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.kalman_group_box = QGroupBox(self.tracking_group_box)
         self.kalman_group_box.setObjectName(u"kalman_group_box")
-        self.kalman_group_box.setMaximumSize(QSize(140, 16777215))
-        self.verticalLayout_6 = QVBoxLayout(self.kalman_group_box)
-        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
-        self.verticalLayout_4 = QVBoxLayout()
+        self.kalman_group_box.setMaximumSize(QSize(110, 16777215))
+        self.kalman_group_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.verticalLayout_4 = QVBoxLayout(self.kalman_group_box)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.verticalLayout_4.setContentsMargins(4, 0, -1, 24)
         self.kalman_radio_button = QRadioButton(self.kalman_group_box)
         self.kalman_radio_button.setObjectName(u"kalman_radio_button")
+        self.kalman_radio_button.setFont(font)
         self.kalman_radio_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         self.verticalLayout_4.addWidget(self.kalman_radio_button)
@@ -204,26 +229,113 @@ class Ui_Widget(object):
         self.verticalLayout_4.addWidget(self.skip_frame_line_edit)
 
 
-        self.verticalLayout_6.addLayout(self.verticalLayout_4)
-
-
         self.horizontalLayout_2.addWidget(self.kalman_group_box)
 
-        self.groupBox_3 = QGroupBox(self.tracking_group_box)
-        self.groupBox_3.setObjectName(u"groupBox_3")
+        self.fast_roi_group_box = QGroupBox(self.tracking_group_box)
+        self.fast_roi_group_box.setObjectName(u"fast_roi_group_box")
+        self.fast_roi_group_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.verticalLayout_6 = QVBoxLayout(self.fast_roi_group_box)
+        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.verticalLayout_6.setContentsMargins(-1, 15, -1, -1)
+        self.fast_roi_radio_button = QRadioButton(self.fast_roi_group_box)
+        self.fast_roi_radio_button.setObjectName(u"fast_roi_radio_button")
+        self.fast_roi_radio_button.setFont(font)
+        self.fast_roi_radio_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-        self.horizontalLayout_2.addWidget(self.groupBox_3)
+        self.verticalLayout_6.addWidget(self.fast_roi_radio_button)
+
+        self.horizontalLayout_5 = QHBoxLayout()
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
+        self.roi_width_label = QLabel(self.fast_roi_group_box)
+        self.roi_width_label.setObjectName(u"roi_width_label")
+        self.roi_width_label.setFont(font1)
+        self.roi_width_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.horizontalLayout_5.addWidget(self.roi_width_label)
+
+        self.roi_width_line_edit = QLineEdit(self.fast_roi_group_box)
+        self.roi_width_line_edit.setObjectName(u"roi_width_line_edit")
+        self.roi_width_line_edit.setMinimumSize(QSize(0, 0))
+        self.roi_width_line_edit.setMaximumSize(QSize(50, 16777215))
+        self.roi_width_line_edit.setFont(font)
+        self.roi_width_line_edit.setMaxLength(3)
+
+        self.horizontalLayout_5.addWidget(self.roi_width_line_edit)
+
+        self.label_4 = QLabel(self.fast_roi_group_box)
+        self.label_4.setObjectName(u"label_4")
+
+        self.horizontalLayout_5.addWidget(self.label_4)
+
+
+        self.verticalLayout_6.addLayout(self.horizontalLayout_5)
+
+        self.roi_width_slider = QSlider(self.fast_roi_group_box)
+        self.roi_width_slider.setObjectName(u"roi_width_slider")
+        self.roi_width_slider.setEnabled(True)
+        self.roi_width_slider.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.roi_width_slider.setMinimum(32)
+        self.roi_width_slider.setMaximum(256)
+        self.roi_width_slider.setValue(128)
+        self.roi_width_slider.setOrientation(Qt.Orientation.Horizontal)
+
+        self.verticalLayout_6.addWidget(self.roi_width_slider)
+
+        self.horizontalLayout_6 = QHBoxLayout()
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.roi_height_label = QLabel(self.fast_roi_group_box)
+        self.roi_height_label.setObjectName(u"roi_height_label")
+        self.roi_height_label.setFont(font1)
+        self.roi_height_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.horizontalLayout_6.addWidget(self.roi_height_label)
+
+        self.roi_height_line_edit = QLineEdit(self.fast_roi_group_box)
+        self.roi_height_line_edit.setObjectName(u"roi_height_line_edit")
+        self.roi_height_line_edit.setMaximumSize(QSize(50, 16777215))
+        self.roi_height_line_edit.setFont(font)
+        self.roi_height_line_edit.setMaxLength(3)
+
+        self.horizontalLayout_6.addWidget(self.roi_height_line_edit)
+
+        self.label_5 = QLabel(self.fast_roi_group_box)
+        self.label_5.setObjectName(u"label_5")
+
+        self.horizontalLayout_6.addWidget(self.label_5)
+
+
+        self.verticalLayout_6.addLayout(self.horizontalLayout_6)
+
+        self.roi_height_slider = QSlider(self.fast_roi_group_box)
+        self.roi_height_slider.setObjectName(u"roi_height_slider")
+        self.roi_height_slider.setEnabled(True)
+        self.roi_height_slider.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.roi_height_slider.setMinimum(32)
+        self.roi_height_slider.setMaximum(256)
+        self.roi_height_slider.setValue(128)
+        self.roi_height_slider.setSliderPosition(128)
+        self.roi_height_slider.setOrientation(Qt.Orientation.Horizontal)
+
+        self.verticalLayout_6.addWidget(self.roi_height_slider)
+
+
+        self.horizontalLayout_2.addWidget(self.fast_roi_group_box)
 
 
         self.verticalLayout_5.addLayout(self.horizontalLayout_2)
 
         self.tracker_stop_button = QPushButton(self.tracking_group_box)
         self.tracker_stop_button.setObjectName(u"tracker_stop_button")
+        self.tracker_stop_button.setEnabled(False)
+        sizePolicy2.setHeightForWidth(self.tracker_stop_button.sizePolicy().hasHeightForWidth())
+        self.tracker_stop_button.setSizePolicy(sizePolicy2)
         self.tracker_stop_button.setMaximumSize(QSize(16777215, 16777215))
         font2 = QFont()
         font2.setPointSize(12)
         self.tracker_stop_button.setFont(font2)
         self.tracker_stop_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.tracker_stop_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.tracker_stop_button.setFlat(False)
 
         self.verticalLayout_5.addWidget(self.tracker_stop_button)
 
@@ -316,10 +428,6 @@ class Ui_Widget(object):
 
         self.horizontalLayout_4.addWidget(self.tabWidget)
 
-        self.horizontalSpacer = QSpacerItem(10, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_4.addItem(self.horizontalSpacer)
-
         self.groupBox = QGroupBox(self.groupBox_2)
         self.groupBox.setObjectName(u"groupBox")
         self.groupBox.setMaximumSize(QSize(16777215, 16777215))
@@ -357,6 +465,7 @@ class Ui_Widget(object):
         self.groupBox_2.setTitle("")
         self.controlsBox.setTitle(QCoreApplication.translate("Widget", u"\u0423\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435", None))
         self.connect_button.setText(QCoreApplication.translate("Widget", u"\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u044c\u0441\u044f", None))
+        self.cancel_connection_button.setText(QCoreApplication.translate("Widget", u"\u041e\u0442\u043c\u0435\u043d\u0438\u0442\u044c \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435", None))
         self.toggle_button.setText(QCoreApplication.translate("Widget", u"\u0412\u043a\u043b\u044e\u0447\u0438\u0442\u044c \u043f\u043e\u0442\u043e\u043a", None))
         self.reboot_server_button.setText(QCoreApplication.translate("Widget", u"\u041f\u0435\u0440\u0435\u0437\u0430\u043f\u0443\u0441\u0442\u0438\u0442\u044c \u0441\u0435\u0440\u0432\u0435\u0440", None))
         self.tracking_group_box.setTitle("")
@@ -364,7 +473,12 @@ class Ui_Widget(object):
         self.kalman_radio_button.setText(QCoreApplication.translate("Widget", u"\u0412\u043a\u043b\u044e\u0447\u0438\u0442\u044c", None))
         self.label.setText(QCoreApplication.translate("Widget", u"\u041f\u0440\u043e\u043f\u0443\u0441\u043a \u043a\u0430\u0434\u0440\u043e\u0432:", None))
         self.skip_frame_line_edit.setText(QCoreApplication.translate("Widget", u"1", None))
-        self.groupBox_3.setTitle(QCoreApplication.translate("Widget", u"\u0411\u044b\u0441\u0442\u0440\u043e\u0435 \u0432\u044b\u0434\u0435\u043b\u0435\u043d\u0438\u0435", None))
+        self.fast_roi_group_box.setTitle(QCoreApplication.translate("Widget", u"\u0411\u044b\u0441\u0442\u0440\u043e\u0435 \u0432\u044b\u0434\u0435\u043b\u0435\u043d\u0438\u0435", None))
+        self.fast_roi_radio_button.setText(QCoreApplication.translate("Widget", u"\u0412\u043a\u043b\u044e\u0447\u0438\u0442\u044c", None))
+        self.roi_width_label.setText(QCoreApplication.translate("Widget", u"\u0428\u0438\u0440\u0438\u043d\u0430:", None))
+        self.label_4.setText(QCoreApplication.translate("Widget", u"px", None))
+        self.roi_height_label.setText(QCoreApplication.translate("Widget", u"\u0412\u044b\u0441\u043e\u0442\u0430:", None))
+        self.label_5.setText(QCoreApplication.translate("Widget", u"px", None))
         self.tracker_stop_button.setText(QCoreApplication.translate("Widget", u"\u041e\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c \u043e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u043d\u0438\u0435", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QCoreApplication.translate("Widget", u"\u041e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u043d\u0438\u0435", None))
         self.params_group_box.setTitle("")
