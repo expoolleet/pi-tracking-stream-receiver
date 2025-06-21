@@ -6,7 +6,7 @@ import numpy as np
 from PySide6 import QtCore
 from PySide6.QtWidgets import QApplication, QWidget, QMessageBox
 from PySide6.QtCore import Qt, QObject, QEvent, QRegularExpression, Signal
-from PySide6.QtGui import QMouseEvent, QRegularExpressionValidator, QKeyEvent
+from PySide6.QtGui import QMouseEvent, QRegularExpressionValidator, QIcon
 
 
 
@@ -48,6 +48,12 @@ class Widget(QWidget):
         self.ui.bitrate_line_edit.setValidator(validator)
         self.ui.roi_width_line_edit.setValidator(validator)
         self.ui.roi_height_line_edit.setValidator(validator)
+        self.ui.training_count_line_edit.setValidator(validator)
+
+        validator = QRegularExpressionValidator(QRegularExpression(r"[+-]?([0-9]*[.])?[0-9]+"))
+        self.ui.learning_rate_line_edit.setValidator(validator)
+        self.ui.max_corr_line_edit.setValidator(validator)
+        self.ui.sigma_factor_line_edit.setValidator(validator)
 
         self.stream_receiver = StreamReceiver(self)
 
@@ -58,6 +64,7 @@ class Widget(QWidget):
         self.viewer.play_pressed_signal.connect(self.start_stream)
         self.viewer.stop_pressed_signal.connect(self.update_gui_on_stop)
         self.viewer.stop_pressed_signal.connect(self.stop_stream)
+        self.viewer.stop_pressed_signal.connect(self.ui.roi_label.clear)
         self.load_start_state_signal.connect(self.viewer.load_no_connection_view)
         self.toggle_view_signal.connect(self.viewer.toggle_view)
 
@@ -172,9 +179,14 @@ class Widget(QWidget):
             "roi": roi,
             "kalman": self.ui.kalman_radio_button.isChecked(),
             "skip_frames": int(self.ui.skip_frame_line_edit.text()),
-            "stream_size": self.stream_receiver.get_stream_size()
+            "stream_size": self.stream_receiver.get_stream_size(),
+            "training_images_count": int(self.ui.training_count_line_edit.text()),
+            "learning_rate": float(self.ui.learning_rate_line_edit.text()),
+            "max_corr": float(self.ui.max_corr_line_edit.text()),
+            "sigma_factor": float(self.ui.sigma_factor_line_edit.text())
         }
         self.socket_handler.send(Command.UPDATE_TRACKING, data)
+        self.ui.tracker_params_group_box.setEnabled(False)
         self.ui.tracker_stop_button.setEnabled(True)
         self.ui.kalman_group_box.setEnabled(False)
         self.ui.fast_roi_group_box.setEnabled(False)
@@ -203,12 +215,13 @@ class Widget(QWidget):
     def update_roi_label(self, frame: np.ndarray) -> None:
         state = self.roi_handler.current_state
         if state != ROIState.FAST_SELECTING and state != ROIState.TRACKING:
+            self.ui.roi_label.clear()
             return
         x, y = self.roi_handler.roi[0], self.roi_handler.roi[1]
         w, h = self.roi_handler.roi[2], self.roi_handler.roi[3]
         brightness = 2
         template = np.array(frame[y:y+h, x:x+w, :], order='C')
-        if template.shape != (h, w, 3):
+        if template.shape != (h, w, 3) and state != ROIState.TRACKING :
             self.roi_handler.reset_fast_roi()
             return
         template = template.astype(np.float32) * brightness
@@ -253,11 +266,17 @@ class Widget(QWidget):
             "connection_label": {
                 "text": self.ui.connection_label.text()
             },
-            "fast_roi_radio_button": {
-                "enabled": self.ui.fast_roi_radio_button.isEnabled()
+            "fast_roi_group_box": {
+                "enabled": self.ui.fast_roi_group_box.isEnabled()
             },
             "cancel_connection_button": {
                 "enabled": self.ui.cancel_connection_button.isEnabled()
+            },
+            "tracker_stop_button": {
+                "enabled": self.ui.tracker_stop_button.isEnabled()
+            },
+            "tracker_params_group_box": {
+                "enabled": self.ui.tracker_params_group_box.isEnabled()
             }
         }
 
@@ -277,6 +296,10 @@ class Widget(QWidget):
             self.ui.roi_height_slider.setValue(saved_data["fast_roi_height"])
             self.ui.roi_width_line_edit.setText(str(saved_data["fast_roi_width"]))
             self.ui.roi_height_line_edit.setText(str(saved_data["fast_roi_height"]))
+            self.ui.training_count_line_edit.setText(str(saved_data["training_count_line_edit"]))
+            self.ui.learning_rate_line_edit.setText(str(saved_data["learning_rate_line_edit"]))
+            self.ui.max_corr_line_edit.setText(str(saved_data["max_corr_line_edit"]))
+            self.ui.sigma_factor_line_edit.setText(str(saved_data["sigma_factor_line_edit"]))
         except KeyError:
             pass
 
@@ -289,7 +312,11 @@ class Widget(QWidget):
             "bitrate": int(self.ui.bitrate_line_edit.text()),
             "fast_roi": self.ui.fast_roi_radio_button.isChecked(),
             "fast_roi_height": self.ui.roi_height_slider.value(),
-            "fast_roi_width": self.ui.roi_width_slider.value()
+            "fast_roi_width": self.ui.roi_width_slider.value(),
+            "training_count_line_edit": int(self.ui.training_count_line_edit.text()),
+            "learning_rate_line_edit": float(self.ui.learning_rate_line_edit.text()),
+            "max_corr_line_edit": float(self.ui.max_corr_line_edit.text()),
+            "sigma_factor_line_edit": float(self.ui.sigma_factor_line_edit.text()),
         })
 
 
@@ -317,13 +344,16 @@ class Widget(QWidget):
         self.ui.params_group_box.setEnabled(self.start_state["params_group_box"]["enabled"])
         self.ui.cfs_group_box.setEnabled(self.start_state["cfs_group_box"]["enabled"])
         self.ui.connection_label.setText(self.start_state["connection_label"]["text"])
-        self.ui.fast_roi_radio_button.setEnabled(self.start_state["fast_roi_radio_button"]["enabled"])
+        self.ui.fast_roi_group_box.setEnabled(self.start_state["fast_roi_group_box"]["enabled"])
         self.ui.cancel_connection_button.setEnabled(self.start_state["cancel_connection_button"]["enabled"])
+        self.ui.tracker_stop_button.setEnabled(self.start_state["tracker_stop_button"]["enabled"])
+        self.ui.tracker_params_group_box.setEnabled(self.start_state["tracker_params_group_box"]["enabled"])
 
 
     def on_disconnect_from_server(self) -> None:
         self.viewer.stop()
         self.zeroconf_handler.clear()
+        self.roi_handler.try_send_roi()
         self.socket_handler.disconnect()
         self.load_start_state_signal.emit()
 
@@ -362,6 +392,7 @@ class Widget(QWidget):
         self.ui.tracker_stop_button.setEnabled(False)
         self.ui.kalman_group_box.setEnabled(True)
         self.ui.fast_roi_group_box.setEnabled(True)
+        self.ui.tracker_params_group_box.setEnabled(True)
         if self.ui.fast_roi_radio_button.isChecked():
             self.roi_handler.handle_fast_roi(True, self.ui.roi_width_slider.value(), self.ui.roi_height_slider.value())
 
@@ -373,6 +404,7 @@ class Widget(QWidget):
             return
         self.socket_handler.send(Command.REBOOT_SERVER)
         self.socket_handler.disconnect()
+        self.roi_handler.try_send_roi()
         self.viewer.stop()
         self.zeroconf_handler.clear()
         self.load_start_state_signal.emit()
@@ -417,6 +449,15 @@ class KeyPressFilter(QObject):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
+    app_icon = QIcon()
+    app_icon.addFile('gui/icons/16x16.png', QtCore.QSize(16, 16))
+    app_icon.addFile('gui/icons/24x24.png', QtCore.QSize(24, 24))
+    app_icon.addFile('gui/icons/32x32.png', QtCore.QSize(32, 32))
+    app_icon.addFile('gui/icons/48x48.png', QtCore.QSize(48, 48))
+    app_icon.addFile('gui/icons/256x256.png', QtCore.QSize(256, 256))
+    app.setWindowIcon(app_icon)
+
     widget = Widget()
     widget.show()
     sys.exit(app.exec())

@@ -22,8 +22,6 @@ input_options = {
 TIME_OUT = 1
 
 
-
-
 class StreamSize:
     SIZE_720 = (0, (960, 720))
     SIZE_480 = (1, (640, 480))
@@ -141,7 +139,8 @@ class StreamReceiver(QWidget):
             except ValueError as e:
                 self.debug.send(f"ValueError error: {e}")
             except Exception as e:
-                print("Exiting read stream...")
+                print(f"Exiting read stream due to an error: {e}")
+                break
 
 
     def get_current_frame(self) -> np.ndarray:

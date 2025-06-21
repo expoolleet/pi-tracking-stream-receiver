@@ -9,14 +9,19 @@ from src.stream_receiver import StreamReceiver
 import threading
 import numpy as np
 import time
+import sys
 from pathlib import Path
 
 TARGET_FPS = 30
 TARGET_FRAME_TIME = 1 / TARGET_FPS
 
-NO_CONNECTION_IMAGE = Path(__file__).parent / "img/no_connection.png"
-CONNECTION_ESTABLISHED_IMAGE = Path(__file__).parent  / "img/connection_established.png"
+if getattr(sys, 'frozen', False):
+    base_path = Path(sys._MEIPASS)
+else:
+    base_path = Path(__file__).resolve().parent
 
+NO_CONNECTION_IMAGE = base_path / "img" / "no_connection.png"
+CONNECTION_ESTABLISHED_IMAGE = base_path / "img" / "connection_established.png"
 
 class Viewer(QWidget):
 

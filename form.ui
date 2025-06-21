@@ -19,6 +19,10 @@
   <property name="windowTitle">
    <string>Stream Receiver</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>icon.ico</normaloff>icon.ico</iconset>
+  </property>
   <property name="windowOpacity">
    <double>1.000000000000000</double>
   </property>
@@ -415,10 +419,156 @@
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_2">
                <item>
+                <widget class="QGroupBox" name="tracker_params_group_box">
+                 <property name="maximumSize">
+                  <size>
+                   <width>85</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="title">
+                  <string>Трекер</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_11">
+                  <property name="spacing">
+                   <number>1</number>
+                  </property>
+                  <property name="leftMargin">
+                   <number>3</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>3</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>3</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>3</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="label_6">
+                    <property name="font">
+                     <font>
+                      <pointsize>8</pointsize>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Трен. изо.</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="training_count_line_edit">
+                    <property name="maximumSize">
+                     <size>
+                      <width>16777215</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <pointsize>9</pointsize>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>1</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="label_7">
+                    <property name="font">
+                     <font>
+                      <pointsize>8</pointsize>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Кф. обуч.</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="learning_rate_line_edit">
+                    <property name="maximumSize">
+                     <size>
+                      <width>16777215</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <pointsize>9</pointsize>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>0.015</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="label_8">
+                    <property name="font">
+                     <font>
+                      <pointsize>8</pointsize>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Макс. корр.</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="max_corr_line_edit">
+                    <property name="maximumSize">
+                     <size>
+                      <width>16777215</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <pointsize>9</pointsize>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>0.20</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="label_9">
+                    <property name="text">
+                     <string>Сигма ф.</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="sigma_factor_line_edit">
+                    <property name="text">
+                     <string>0.04</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
                 <widget class="QGroupBox" name="kalman_group_box">
                  <property name="maximumSize">
                   <size>
-                   <width>110</width>
+                   <width>100</width>
                    <height>16777215</height>
                   </size>
                  </property>
@@ -442,7 +592,7 @@
                    <widget class="QRadioButton" name="kalman_radio_button">
                     <property name="font">
                      <font>
-                      <pointsize>11</pointsize>
+                      <pointsize>10</pointsize>
                      </font>
                     </property>
                     <property name="cursor">
@@ -461,8 +611,13 @@
                       <height>20</height>
                      </size>
                     </property>
+                    <property name="font">
+                     <font>
+                      <pointsize>8</pointsize>
+                     </font>
+                    </property>
                     <property name="text">
-                     <string>Пропуск кадров:</string>
+                     <string>Проп. кадров:</string>
                     </property>
                    </widget>
                   </item>
@@ -502,7 +657,7 @@
                <item>
                 <widget class="QGroupBox" name="fast_roi_group_box">
                  <property name="title">
-                  <string>Быстрое выделение</string>
+                  <string>Быстрое выделение области</string>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -515,7 +670,7 @@
                    <widget class="QRadioButton" name="fast_roi_radio_button">
                     <property name="font">
                      <font>
-                      <pointsize>11</pointsize>
+                      <pointsize>10</pointsize>
                      </font>
                     </property>
                     <property name="cursor">
@@ -561,6 +716,9 @@
                        <font>
                         <pointsize>11</pointsize>
                        </font>
+                      </property>
+                      <property name="text">
+                       <string>128</string>
                       </property>
                       <property name="maxLength">
                        <number>3</number>
@@ -628,6 +786,9 @@
                         <pointsize>11</pointsize>
                        </font>
                       </property>
+                      <property name="text">
+                       <string>128</string>
+                      </property>
                       <property name="maxLength">
                        <number>3</number>
                       </property>
@@ -686,7 +847,7 @@
                <property name="maximumSize">
                 <size>
                  <width>16777215</width>
-                 <height>16777215</height>
+                 <height>30</height>
                 </size>
                </property>
                <property name="font">

@@ -223,7 +223,7 @@ class ROIHandler(QObject):
 
 
     def on_right_click_cancel_roi(self, pos) -> None:
-        if not self.enabled or self.current_state == ROIState.TRACKING:
+        if not self.enabled or self.current_state == ROIState.TRACKING or self.current_state == ROIState.FAST_SELECTING:
             return
         self.reset_points()
         self.reset_roi()
