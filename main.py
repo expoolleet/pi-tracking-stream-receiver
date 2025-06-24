@@ -6,8 +6,7 @@ import numpy as np
 from PySide6 import QtCore
 from PySide6.QtWidgets import QApplication, QWidget, QMessageBox
 from PySide6.QtCore import Qt, QObject, QEvent, QRegularExpression, Signal
-from PySide6.QtGui import QMouseEvent, QRegularExpressionValidator, QIcon
-
+from PySide6.QtGui import QMouseEvent, QRegularExpressionValidator, QIcon, QWheelEvent
 
 
 from src.roi_handler import ROIHandler, ROIState
@@ -79,17 +78,16 @@ class Widget(QWidget):
         self.view_label_event_filter = MouseEventFilter(
             self.roi_handler.on_left_click_handle_roi,
             self.roi_handler.on_right_click_cancel_roi,
-            self.roi_handler.on_mouse_move_draw_roi,
-        )
+            self.roi_handler.on_mouse_move_draw_roi)
         self.ui.view_label.installEventFilter(self.view_label_event_filter)
         self.key_press_event_filter = KeyPressFilter(
-            self.roi_handler.on_key_pressed_try_send_roi
-        )
+            self.roi_handler.on_key_pressed_try_send_roi)
         self.installEventFilter(self.key_press_event_filter)
 
         self.socket_handler = SocketHandler(self)
         self.socket_handler.update_roi_signal.connect(self.on_roi_update)
         self.socket_handler.stop_tracking_signal.connect(self.roi_handler.try_reset_roi)
+        self.socket_handler.update_tracker_data_signal.connect(self.update_tracker_data)
 
         self.debug = DebugEmitter(self)
         self.debug.debug_signal.connect(self.show_debug_message)
@@ -122,9 +120,26 @@ class Widget(QWidget):
         self.ui.fast_roi_radio_button.toggled.connect(
             lambda enabled: self.roi_handler.handle_fast_roi(enabled, self.ui.roi_width_slider.value(), self.ui.roi_height_slider.value()))
 
+        self.tracking_stopped = False
+
         self.data = Data(self, __file__)
         self.load_saved_parameters()
 
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        if self.roi_handler.current_state != ROIState.FAST_SELECTING:
+            return
+        direction = np.sign(event.angleDelta().y())
+        new_size = (self.roi_handler.roi[2] + self.roi_handler.roi[3]) // 2 + direction
+        self.handle_roi_width(new_size)
+        self.handle_roi_height(new_size)
+
+
+    def update_tracker_data(self, data) -> None:
+        plain_text = ''
+        for key in data:
+            plain_text += f"{key.capitalize().replace('_', ' ')}: {data[key]}\n\n"
+        self.ui.tracker_data_plain_text.setPlainText(plain_text)
 
 
     def on_service_added(self, params) -> None:
@@ -135,10 +150,14 @@ class Widget(QWidget):
         self.ui.cancel_connection_button.setEnabled(False)
         self.socket_handler.connect(params["server_ip"], params["server_port"])
         self.roi_handler.set_tracking_frame_size(params["tracking_frame_size"])
+        if self.ui.fast_roi_radio_button.isChecked():
+            self.roi_handler.change_state(ROIState.FAST_SELECTING)
         self.toggle_view_signal.emit()
 
 
     def on_roi_update(self, roi) -> None:
+        if self.tracking_stopped:
+            return
         self.roi_handler.update_roi(roi)
         if not self.ui.tracker_stop_button.isEnabled():
             self.ui.tracker_stop_button.setEnabled(True)
@@ -175,6 +194,7 @@ class Widget(QWidget):
     def enable_tracking(self, roi) -> None:
         if not self.viewer.is_playing:
             return
+        self.tracking_stopped = False
         data = {
             "roi": roi,
             "kalman": self.ui.kalman_radio_button.isChecked(),
@@ -388,13 +408,14 @@ class Widget(QWidget):
 
     @QtCore.Slot()
     def on_tracker_stop_button_clicked(self) -> None:
-        self.socket_handler.send(Command.STOP_TRACKING)
+        self.tracking_stopped = True
         self.ui.tracker_stop_button.setEnabled(False)
         self.ui.kalman_group_box.setEnabled(True)
         self.ui.fast_roi_group_box.setEnabled(True)
         self.ui.tracker_params_group_box.setEnabled(True)
         if self.ui.fast_roi_radio_button.isChecked():
-            self.roi_handler.handle_fast_roi(True, self.ui.roi_width_slider.value(), self.ui.roi_height_slider.value())
+            self.roi_handler.handle_fast_roi(True, self.ui.roi_width_slider.value(), self.ui.roi_height_slider.value(), True)
+        self.socket_handler.send(Command.STOP_TRACKING)
 
 
     @QtCore.Slot()

@@ -13,6 +13,8 @@ from typing import Tuple
 
 from src.tools import DebugEmitter
 
+import inspect
+
 SELECTING_ROI_COLOR = (0, 0, 255)
 TRACKING_ROI_COLOR = (0, 255, 0)
 FAILED_ROI_COLOR = (255, 0, 0)
@@ -126,9 +128,9 @@ class ROIHandler(QObject):
         else:
             width_offset = self.stream_size[0] / self.tracking_frame_size[0]
             height_offset = self.stream_size[1] / self.tracking_frame_size[1]
-            scaled_roi = (int(roi[0] * width_offset), int(roi[1] * height_offset),
-                          int(roi[2] * width_offset), int(roi[3] * height_offset))
-            if scaled_roi == self.roi:
+            scaled_roi = [int(roi[0] * width_offset), int(roi[1] * height_offset),
+                          int(roi[2] * width_offset), int(roi[3] * height_offset)]
+            if scaled_roi == self.get_roi():
                 return
             if self._smooth_update_thread is None or not self._smooth_update_thread.is_alive():
                 self._stop_smooth_event.clear()
@@ -139,11 +141,11 @@ class ROIHandler(QObject):
             self.change_state(ROIState.TRACKING)
 
 
-    def smooth_update_roi(self, new_roi):
-        old_roi = self.roi
+    def smooth_update_roi(self, new_roi) -> None:
+        old_roi = self.get_roi()
         t = 0
         tend = 1
-        dt = 0.1
+        dt = 0.05
         time_sleep = 0.01
         while t != tend and not self._stop_smooth_event.is_set() and self.current_state == ROIState.TRACKING:
             x = (tend - t) * old_roi[0] + t * new_roi[0]
@@ -241,15 +243,15 @@ class ROIHandler(QObject):
         x = int(pos.x())
         y = int(pos.y())
         if self.current_state == ROIState.FAST_SELECTING:
+            roi = self.get_roi()
             pixmap = self.view_label.pixmap()
             offset_x, offset_y, width_ratio, height_ratio = self.calculate_offsets_and_size_ratios(pixmap)
-
-            x1 = int((x - offset_x) * width_ratio - self.roi[2] // 2)
-            y1 = int((y - offset_y) * height_ratio - self.roi[3] // 2)
-            x2 = x1 + self.roi[2]
-            y2 = y1 + self.roi[3]
+            x1 = int((x - offset_x) * width_ratio - roi[2] // 2)
+            y1 = int((y - offset_y) * height_ratio - roi[3] // 2)
+            x2 = x1 + roi[2]
+            y2 = y1 + roi[3]
             with self._roi_lock:
-                self.roi = [x1, y1, self.roi[2], self.roi[3]]
+                self.roi = [x1, y1, roi[2], roi[3]]
             self.start_point = [x1, y1]
             self.end_point = [x2, y2]
 
@@ -272,10 +274,10 @@ class ROIHandler(QObject):
     def try_send_roi(self) -> bool:
         with self._roi_lock:
             self.roi = self.calculate_roi()
-        self.reset_points()
-        if self.roi[2] != 0 and self.roi[3] != 0:
-            self.roi_selected_signal.emit(self.roi)
-            return True
+            self.reset_points()
+            if self.roi[2] != 0 and self.roi[3] != 0:
+                self.roi_selected_signal.emit(self.roi)
+                return True
         self.debug.send("Cannot send roi: width and length are zeros")
         return False
 
@@ -285,12 +287,16 @@ class ROIHandler(QObject):
             return self.roi
 
 
-    def handle_fast_roi(self, enabled, width, height) -> None:
+    def handle_fast_roi(self, enabled, width, height, reset=False) -> None:
         if enabled:
-            center_point = (self.stream_size[0] // 2, self.stream_size[1] // 2)
-            x = center_point[0] - width // 2
-            y = center_point[1] - height // 2
-
+            if reset:
+                center_point = (self.stream_size[0] // 2, self.stream_size[1] // 2)
+                x = center_point[0] - width // 2
+                y = center_point[1] - height // 2
+            else:
+                roi = self.get_roi()
+                x = roi[0] + roi[2] // 2 - width // 2
+                y = roi[1] + roi[3] // 2 - height // 2
             roi = [x, y, width, height]
 
             with self._roi_lock:

@@ -22,6 +22,7 @@ class SocketHandler(QObject):
     update_roi_signal = Signal(np.ndarray)
     stop_tracking_signal = Signal()
     disconnect_from_server_signal = Signal()
+    update_tracker_data_signal = Signal(dict)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -67,7 +68,9 @@ class SocketHandler(QObject):
 
     def handle_messages(self, messages) -> None:
         for message in messages:
-            self.debug.send(f"server sent: {message}")
+            command = message["command"] if "command" in message else Command.UNKNOWN
+            if self.show_only_limited_commands(command):
+                self.debug.send(f"server sent: {message}")
             if "roi" in message:
                 received_roi = message["roi"]
                 try:
@@ -79,8 +82,21 @@ class SocketHandler(QObject):
                     self.stop_tracking_signal.emit()
                 elif message["command"] == Command.DISCONNECT:
                     self.disconnect_from_server_signal.emit()
+                elif message["command"] == Command.TRACKER_DATA:
+                    self.update_tracker_data_signal.emit(message["data"])
+                    self.update_roi_signal.emit(message["data"]["roi"])
             else:
                 self.debug.send(f"Received unknown message: {message}")
+
+
+    def show_only_limited_commands(self, command):
+        if command == Command.STOP_TRACKING \
+        or command == Command.DISCONNECT \
+        or command == Command.REBOOT_SERVER \
+        or command == Command.CHANGE_STREAM_RES \
+        or command == Command.STOP_STREAM:
+            return True
+        return False
 
 
     def receive(self) -> None:

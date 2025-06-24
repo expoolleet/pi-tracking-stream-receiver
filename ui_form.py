@@ -24,7 +24,7 @@ class Ui_Widget(object):
     def setupUi(self, Widget):
         if not Widget.objectName():
             Widget.setObjectName(u"Widget")
-        Widget.resize(1093, 800)
+        Widget.resize(1129, 804)
         Widget.setMinimumSize(QSize(1000, 800))
         icon = QIcon()
         icon.addFile(u"icon.ico", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
@@ -41,6 +41,27 @@ class Ui_Widget(object):
         self.groupBox_4.setFlat(True)
         self.horizontalLayout = QHBoxLayout(self.groupBox_4)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.groupBox_3 = QGroupBox(self.groupBox_4)
+        self.groupBox_3.setObjectName(u"groupBox_3")
+        self.groupBox_3.setMinimumSize(QSize(185, 0))
+        self.groupBox_3.setMaximumSize(QSize(185, 16777215))
+        self.groupBox_3.setFlat(True)
+        self.verticalLayout_12 = QVBoxLayout(self.groupBox_3)
+        self.verticalLayout_12.setObjectName(u"verticalLayout_12")
+        self.tracker_data_plain_text = QPlainTextEdit(self.groupBox_3)
+        self.tracker_data_plain_text.setObjectName(u"tracker_data_plain_text")
+        self.tracker_data_plain_text.setMaximumSize(QSize(16777215, 16777215))
+        font = QFont()
+        font.setPointSize(11)
+        self.tracker_data_plain_text.setFont(font)
+        self.tracker_data_plain_text.viewport().setProperty(u"cursor", QCursor(Qt.CursorShape.IBeamCursor))
+        self.tracker_data_plain_text.setReadOnly(True)
+
+        self.verticalLayout_12.addWidget(self.tracker_data_plain_text)
+
+
+        self.horizontalLayout.addWidget(self.groupBox_3)
+
         self.horizontalSpacer_2 = QSpacerItem(20, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer_2)
@@ -100,8 +121,6 @@ class Ui_Widget(object):
         self.connection_label.setSizePolicy(sizePolicy1)
         self.connection_label.setMinimumSize(QSize(0, 0))
         self.connection_label.setMaximumSize(QSize(16777215, 20))
-        font = QFont()
-        font.setPointSize(11)
         self.connection_label.setFont(font)
 
         self.verticalLayout_2.addWidget(self.connection_label)
@@ -530,6 +549,7 @@ class Ui_Widget(object):
 
     def retranslateUi(self, Widget):
         Widget.setWindowTitle(QCoreApplication.translate("Widget", u"Stream Receiver", None))
+        self.groupBox_3.setTitle(QCoreApplication.translate("Widget", u"\u0414\u0430\u043d\u043d\u044b\u0435 \u043e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u043d\u0438\u044f", None))
         self.view_label.setText("")
         self.roi_label.setText("")
         self.connection_label.setText(QCoreApplication.translate("Widget", u"\u041d\u0435\u0442 \u0441\u043e\u0435\u0434\u0438\u043d\u0435\u043d\u0438\u044f \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u043e\u043c", None))

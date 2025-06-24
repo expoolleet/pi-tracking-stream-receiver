@@ -169,6 +169,7 @@ class StreamReceiver(QWidget):
     def set_default_stream_size(self):
         self.set_stream_size(self.default_stream_size)
 
+
     def get_stream_size_index(self):
         size = (self.stream_width, self.stream_height)
         if size == StreamSize.SIZE_720[1]:
