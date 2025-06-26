@@ -516,7 +516,7 @@
                      </font>
                     </property>
                     <property name="text">
-                     <string>1</string>
+                     <string>5</string>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -537,6 +537,9 @@
                   </item>
                   <item>
                    <widget class="QLineEdit" name="learning_rate_line_edit">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="maximumSize">
                      <size>
                       <width>16777215</width>
@@ -582,7 +585,7 @@
                      </font>
                     </property>
                     <property name="text">
-                     <string>0.20</string>
+                     <string>0.25</string>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -599,7 +602,7 @@
                   <item>
                    <widget class="QLineEdit" name="sigma_factor_line_edit">
                     <property name="text">
-                     <string>0.04</string>
+                     <string>0.05</string>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignmentFlag::AlignCenter</set>

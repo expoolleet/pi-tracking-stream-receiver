@@ -81,7 +81,8 @@ class Widget(QWidget):
             self.roi_handler.on_mouse_move_draw_roi)
         self.ui.view_label.installEventFilter(self.view_label_event_filter)
         self.key_press_event_filter = KeyPressFilter(
-            self.roi_handler.on_key_pressed_try_send_roi)
+            self.roi_handler.on_key_pressed_try_send_roi,
+            self.on_tracker_stop_button_clicked)
         self.installEventFilter(self.key_press_event_filter)
 
         self.socket_handler = SocketHandler(self)
@@ -120,7 +121,7 @@ class Widget(QWidget):
         self.ui.fast_roi_radio_button.toggled.connect(
             lambda enabled: self.roi_handler.handle_fast_roi(enabled, self.ui.roi_width_slider.value(), self.ui.roi_height_slider.value()))
 
-        self.tracking_stopped = False
+        self.is_tracking_stopped = False
 
         self.data = Data(self, __file__)
         self.load_saved_parameters()
@@ -156,7 +157,7 @@ class Widget(QWidget):
 
 
     def on_roi_update(self, roi) -> None:
-        if self.tracking_stopped:
+        if self.is_tracking_stopped:
             return
         self.roi_handler.update_roi(roi)
         if not self.ui.tracker_stop_button.isEnabled():
@@ -194,7 +195,7 @@ class Widget(QWidget):
     def enable_tracking(self, roi) -> None:
         if not self.viewer.is_playing:
             return
-        self.tracking_stopped = False
+        self.is_tracking_stopped = False
         data = {
             "roi": roi,
             "kalman": self.ui.kalman_radio_button.isChecked(),
@@ -408,7 +409,9 @@ class Widget(QWidget):
 
     @QtCore.Slot()
     def on_tracker_stop_button_clicked(self) -> None:
-        self.tracking_stopped = True
+        if not self.ui.tracker_stop_button.isEnabled():
+            return
+        self.is_tracking_stopped = True
         self.ui.tracker_stop_button.setEnabled(False)
         self.ui.kalman_group_box.setEnabled(True)
         self.ui.fast_roi_group_box.setEnabled(True)
@@ -456,14 +459,17 @@ class MouseEventFilter(QObject):
 
 class KeyPressFilter(QObject):
 
-    def __init__(self, callback_return_key=None):
+    def __init__(self, callback_return_key=None, callback_escape_key=None):
         super().__init__()
         self.callback_return_key = callback_return_key
+        self.callback_escape_key = callback_escape_key
+
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress:
-            if event.key() == Qt.Key.Key_Return:
-                if self.callback_return_key:
-                    self.callback_return_key()
+            if event.key() == Qt.Key.Key_Return and self.callback_return_key:
+                self.callback_return_key()
+            if event.key() == Qt.Key.Key_Escape and self.callback_escape_key:
+                self.callback_escape_key()
             return True
         return super().eventFilter(obj, event)
 
