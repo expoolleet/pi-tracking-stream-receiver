@@ -143,8 +143,8 @@ class ROIHandler(QObject):
         old_roi = self.get_roi()
         t = 0
         tend = 1
-        dt = 0.05
-        time_sleep = 0.01
+        dt = 0.01
+        time_sleep = 0.001
         while t != tend and not self._stop_smooth_event.is_set() and self.current_state == ROIState.TRACKING:
             x = (tend - t) * old_roi[0] + t * new_roi[0]
             y = (tend - t) * old_roi[1] + t * new_roi[1]

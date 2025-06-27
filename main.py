@@ -19,6 +19,8 @@ from src.zeroconf_handler import ZeroconfHandler
 from src.widgets_text import *
 from src.data import Data
 
+import cv2
+
 # Important:
 # You need to run the following command to generate the ui_form.py file
 #     pyside6-uic form.ui -o ui_form.py
@@ -73,11 +75,11 @@ class Widget(QWidget):
         self.viewer.stop_pressed_signal.connect(self.roi_handler.disable_roi_selecting)
         self.stream_size_changed_signal.connect(self.roi_handler.set_stream_size)
 
-        self.update_view_label = self.roi_handler.draw_roi_on_frame(self.update_view_label)  # wrapper
+        self.update_view_label = self.add_crosshair(self.roi_handler.draw_roi_on_frame(self.update_view_label))  # wrapper
 
         self.view_label_event_filter = MouseEventFilter(
             self.roi_handler.on_left_click_handle_roi,
-            self.roi_handler.on_right_click_cancel_roi,
+            [self.roi_handler.on_right_click_cancel_roi, lambda pos: self.on_tracker_stop_button_clicked()],
             self.roi_handler.on_mouse_move_draw_roi)
         self.ui.view_label.installEventFilter(self.view_label_event_filter)
         self.key_press_event_filter = KeyPressFilter(
@@ -231,6 +233,23 @@ class Widget(QWidget):
         size = self.ui.view_label.size()
         scaled_pixmap = scale_pixmap(pixmap, size)
         self.ui.view_label.setPixmap(scaled_pixmap)
+
+
+    def add_crosshair(self, func):
+        def wrapper(*args, **kwargs):
+            args = list(args)
+            if isinstance(args[0], np.ndarray):
+                frame = args[0].copy()
+                stream_size = self.stream_receiver.get_stream_size()
+                center_x = stream_size[0] // 2
+                center_y = stream_size[1] // 2
+                length = 8
+                thickness = 2
+                cv2.line(frame, (center_x, center_y - length), (center_x, center_y + length), (0, 0, 255), thickness)
+                cv2.line(frame, (center_x - length, center_y), (center_x + length, center_y), (0, 0, 255), thickness)
+                args[0] = frame
+            return func(*args, **kwargs)
+        return wrapper
 
 
     def update_roi_label(self, frame: np.ndarray) -> None:
@@ -435,10 +454,10 @@ class Widget(QWidget):
 
 
 class MouseEventFilter(QObject):
-    def __init__(self, callback_left_button=None, callback_right_button=None, callback_move=None):
+    def __init__(self, callback_left_button=None, callbacks_right_button=None, callback_move=None):
         super().__init__()
         self.callback_left_button = callback_left_button
-        self.callback_right_button = callback_right_button
+        self.callbacks_right_button = callbacks_right_button
         self.callback_move = callback_move
 
 
@@ -448,8 +467,9 @@ class MouseEventFilter(QObject):
                 if self.callback_left_button is not None:
                     self.callback_left_button(event.position())
             elif event.button() == Qt.RightButton and event.type() == QEvent.MouseButtonPress:
-                if self.callback_right_button is not None:
-                    self.callback_right_button(event.position())
+                if self.callbacks_right_button is not None:
+                    for cb in self.callbacks_right_button:
+                        cb(event.position())
             else:
                 if self.callback_move is not None:
                     self.callback_move(event.position())
