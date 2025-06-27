@@ -67,6 +67,8 @@ class SocketHandler(QObject):
 
 
     def handle_messages(self, messages) -> None:
+        if messages is None:
+            return
         for message in messages:
             command = message["command"] if "command" in message else Command.UNKNOWN
             if self.show_only_limited_commands(command):
