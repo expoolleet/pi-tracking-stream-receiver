@@ -424,7 +424,7 @@
          <cursorShape>ArrowCursor</cursorShape>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>2</number>
         </property>
         <property name="documentMode">
          <bool>true</bool>
@@ -1065,6 +1065,9 @@
              </item>
              <item>
               <widget class="QPushButton" name="send_cfs_push_button">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="font">
                 <font>
                  <pointsize>11</pointsize>

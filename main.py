@@ -453,6 +453,14 @@ class Widget(QWidget):
         self.load_start_state_signal.emit()
 
 
+    @QtCore.Slot()
+    def on_send_cfs_push_button_clicked(self) -> None:
+        cf1 = int(self.ui.line_edit_c1.text())
+        cf2 = int(self.ui.line_edit_c2.text())
+        cf3 = int(self.ui.line_edit_c3.text())
+        self.socket_handler.send(Command.SEND_CFS, [cf1, cf2, cf3])
+
+
 class MouseEventFilter(QObject):
     def __init__(self, callback_left_button=None, callbacks_right_button=None, callback_move=None):
         super().__init__()
