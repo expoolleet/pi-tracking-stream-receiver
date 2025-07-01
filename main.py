@@ -50,6 +50,7 @@ class Widget(QWidget):
         self.ui.roi_width_line_edit.setValidator(validator)
         self.ui.roi_height_line_edit.setValidator(validator)
         self.ui.training_count_line_edit.setValidator(validator)
+        self.ui.stream_fps_line_edit.setValidator(validator)
 
         validator = QRegularExpressionValidator(QRegularExpression(r"[+-]?([0-9]*[.])?[0-9]+"))
         self.ui.learning_rate_line_edit.setValidator(validator)
@@ -68,12 +69,14 @@ class Widget(QWidget):
         self.viewer.stop_pressed_signal.connect(self.ui.roi_label.clear)
         self.load_start_state_signal.connect(self.viewer.load_no_connection_view)
         self.toggle_view_signal.connect(self.viewer.toggle_view)
+        self.toggle_view_signal.connect(lambda: self.viewer.set_frame_rate(int(self.ui.stream_fps_line_edit.text())))
 
-        self.roi_handler = ROIHandler(self, self.ui.view_label, self.ui.roi_label)
+        self.roi_handler = ROIHandler(self, self.ui.view_label, self.ui.roi_label, 1/int(self.ui.stream_fps_line_edit.text()))
         self.roi_handler.roi_selected_signal.connect(self.enable_tracking)
         self.viewer.play_pressed_signal.connect(self.roi_handler.enable_roi_selecting)
         self.viewer.stop_pressed_signal.connect(self.roi_handler.disable_roi_selecting)
         self.stream_size_changed_signal.connect(self.roi_handler.set_stream_size)
+        self.toggle_view_signal.connect(lambda: self.roi_handler.set_interpolation_step(1/int(self.ui.stream_fps_line_edit.text())))
 
         self.update_view_label = self.add_crosshair(self.roi_handler.draw_roi_on_frame(self.update_view_label))  # wrapper
 
@@ -219,9 +222,12 @@ class Widget(QWidget):
         stream_size = self.stream_receiver.get_stream_size()
         data = {
             "stream_size": stream_size,
-            "bitrate": int(self.ui.bitrate_line_edit.text())
+            "bitrate": int(self.ui.bitrate_line_edit.text()),
+            "frame_rate": int(self.ui.stream_fps_line_edit.text())
         }
         self.socket_handler.send(Command.START_STREAM, data)
+        if self.ui.fast_roi_radio_button.isChecked():
+            self.roi_handler.handle_fast_roi(True, self.ui.roi_width_slider.value(), self.ui.roi_height_slider.value(), True)
 
 
     def stop_stream(self) -> None:
@@ -340,6 +346,10 @@ class Widget(QWidget):
             self.ui.learning_rate_line_edit.setText(str(saved_data["learning_rate_line_edit"]))
             self.ui.max_corr_line_edit.setText(str(saved_data["max_corr_line_edit"]))
             self.ui.sigma_factor_line_edit.setText(str(saved_data["sigma_factor_line_edit"]))
+            self.ui.stream_fps_line_edit.setText(str(saved_data["stream_fps_line_edit"]))
+            self.ui.line_edit_c1.setText(str(saved_data["line_edit_c1"]))
+            self.ui.line_edit_c2.setText(str(saved_data["line_edit_c2"]))
+            self.ui.line_edit_c3.setText(str(saved_data["line_edit_c3"]))
         except KeyError:
             pass
 
@@ -357,6 +367,10 @@ class Widget(QWidget):
             "learning_rate_line_edit": float(self.ui.learning_rate_line_edit.text()),
             "max_corr_line_edit": float(self.ui.max_corr_line_edit.text()),
             "sigma_factor_line_edit": float(self.ui.sigma_factor_line_edit.text()),
+            "stream_fps_line_edit": int(self.ui.stream_fps_line_edit.text()),
+            "line_edit_c1": int(self.ui.line_edit_c1.text()),
+            "line_edit_c2": int(self.ui.line_edit_c2.text()),
+            "line_edit_c3": int(self.ui.line_edit_c3.text())
         })
 
 

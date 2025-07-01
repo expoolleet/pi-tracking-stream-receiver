@@ -12,8 +12,6 @@ import time
 import sys
 from pathlib import Path
 
-TARGET_FPS = 30
-TARGET_FRAME_TIME = 1 / TARGET_FPS
 
 if getattr(sys, 'frozen', False):
     base_path = Path(sys._MEIPASS)
@@ -30,7 +28,7 @@ class Viewer(QWidget):
     stop_pressed_signal = Signal()
 
 
-    def __init__(self, parent=None, stream_receiver: StreamReceiver = None):
+    def __init__(self, parent=None, stream_receiver: StreamReceiver=None, frame_rate=30):
         super().__init__(parent)
         self.parent = parent
         self.ui = parent.ui
@@ -44,12 +42,15 @@ class Viewer(QWidget):
 
         self.load_no_connection_view()
 
+        self.frame_rate = frame_rate
+        self.frame_time = 1.0 / frame_rate
 
-    def load_connection_established_view(self):
+
+    def load_connection_established_view(self) -> None:
         self.load_image_view(CONNECTION_ESTABLISHED_IMAGE)
 
 
-    def load_no_connection_view(self):
+    def load_no_connection_view(self) -> None:
         self.load_image_view(NO_CONNECTION_IMAGE)
 
 
@@ -65,6 +66,11 @@ class Viewer(QWidget):
             self.ui.view_label.setPixmap(no_connection)
         except Exception as e:
             self.debug.send(f"Error loading image view: {e}")
+
+
+    def set_frame_rate(self, frame_rate) -> None:
+        self.frame_rate = frame_rate
+        self.frame_time = 1 / frame_rate
 
 
     def update(self) -> None:
@@ -84,8 +90,8 @@ class Viewer(QWidget):
                 self.debug.send(f"Error updating view: {e}")
 
             end_time = time.time() - start_time
-            if end_time < TARGET_FRAME_TIME:
-                time.sleep(TARGET_FRAME_TIME - end_time)
+            if end_time < self.frame_time:
+                time.sleep(self.frame_time - end_time)
 
 
     def change_stream_url(self, stream_params) -> None:

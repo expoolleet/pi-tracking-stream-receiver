@@ -37,7 +37,7 @@ class ROIHandler(QObject):
 
     roi_selected_signal = Signal(np.ndarray)
 
-    def __init__(self, parent=None, view_label=None, roi_label=None, stream_size=None):
+    def __init__(self, parent=None, view_label=None, roi_label=None, stream_size=None, interpolation_step=1/30):
         super().__init__(parent)
         self.parent = parent
         self.roi = None
@@ -58,6 +58,9 @@ class ROIHandler(QObject):
 
         self.debug = DebugEmitter()
         self.set_roi(INIT_ROI)
+
+        self.interpolation_step = interpolation_step
+        self.interpolation_sleep_time = 0.001
 
     def enable_roi_selecting(self) -> None:
         self.enabled = True
@@ -140,21 +143,24 @@ class ROIHandler(QObject):
 
 
     def smooth_update_roi(self, new_roi) -> None:
+        time.sleep(self.interpolation_step)
         old_roi = self.get_roi()
         t = 0
         tend = 1
-        dt = 0.01
-        time_sleep = 0.001
         while t != tend and not self._stop_smooth_event.is_set() and self.current_state == ROIState.TRACKING:
             x = (tend - t) * old_roi[0] + t * new_roi[0]
             y = (tend - t) * old_roi[1] + t * new_roi[1]
             w = (tend - t) * old_roi[2] + t * new_roi[2]
             h = (tend - t) * old_roi[3] + t * new_roi[3]
             self.set_roi([int(x), int(y), int(w), int(h)])
-            t = min(t + dt, tend)
-            time.sleep(time_sleep)
+            t = min(t + self.interpolation_step, tend)
+            time.sleep(self.interpolation_sleep_time)
         if self.current_state == ROIState.TRACKING:
             self.set_roi(new_roi)
+
+
+    def set_interpolation_step(self, step) -> None:
+        self.interpolation_step = step
 
 
     def reset_points(self) -> None:

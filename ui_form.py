@@ -240,6 +240,7 @@ class Ui_Widget(object):
         font3 = QFont()
         font3.setPointSize(9)
         self.training_count_line_edit.setFont(font3)
+        self.training_count_line_edit.setMaxLength(2)
         self.training_count_line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.verticalLayout_11.addWidget(self.training_count_line_edit)
@@ -255,6 +256,7 @@ class Ui_Widget(object):
         self.learning_rate_line_edit.setEnabled(False)
         self.learning_rate_line_edit.setMaximumSize(QSize(16777215, 16777215))
         self.learning_rate_line_edit.setFont(font3)
+        self.learning_rate_line_edit.setMaxLength(5)
         self.learning_rate_line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.verticalLayout_11.addWidget(self.learning_rate_line_edit)
@@ -269,6 +271,7 @@ class Ui_Widget(object):
         self.max_corr_line_edit.setObjectName(u"max_corr_line_edit")
         self.max_corr_line_edit.setMaximumSize(QSize(16777215, 16777215))
         self.max_corr_line_edit.setFont(font3)
+        self.max_corr_line_edit.setMaxLength(5)
         self.max_corr_line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.verticalLayout_11.addWidget(self.max_corr_line_edit)
@@ -280,6 +283,7 @@ class Ui_Widget(object):
 
         self.sigma_factor_line_edit = QLineEdit(self.tracker_params_group_box)
         self.sigma_factor_line_edit.setObjectName(u"sigma_factor_line_edit")
+        self.sigma_factor_line_edit.setMaxLength(5)
         self.sigma_factor_line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.verticalLayout_11.addWidget(self.sigma_factor_line_edit)
@@ -313,7 +317,7 @@ class Ui_Widget(object):
         self.skip_frame_line_edit.setMaximumSize(QSize(16777215, 16777215))
         self.skip_frame_line_edit.setFont(font)
         self.skip_frame_line_edit.setInputMask(u"")
-        self.skip_frame_line_edit.setMaxLength(100)
+        self.skip_frame_line_edit.setMaxLength(2)
         self.skip_frame_line_edit.setFrame(True)
         self.skip_frame_line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -440,33 +444,77 @@ class Ui_Widget(object):
         self.verticalLayout_9.setObjectName(u"verticalLayout_9")
         self.params_group_box = QGroupBox(self.tab_5)
         self.params_group_box.setObjectName(u"params_group_box")
-        self.verticalLayout_10 = QVBoxLayout(self.params_group_box)
-        self.verticalLayout_10.setSpacing(0)
-        self.verticalLayout_10.setObjectName(u"verticalLayout_10")
-        self.label_2 = QLabel(self.params_group_box)
+        self.params_group_box.setFlat(True)
+        self.horizontalLayout_7 = QHBoxLayout(self.params_group_box)
+        self.horizontalLayout_7.setSpacing(0)
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.groupBox_5 = QGroupBox(self.params_group_box)
+        self.groupBox_5.setObjectName(u"groupBox_5")
+        self.verticalLayout_13 = QVBoxLayout(self.groupBox_5)
+        self.verticalLayout_13.setObjectName(u"verticalLayout_13")
+        self.label_2 = QLabel(self.groupBox_5)
         self.label_2.setObjectName(u"label_2")
         self.label_2.setMaximumSize(QSize(16777215, 15))
+        self.label_2.setFont(font1)
 
-        self.verticalLayout_10.addWidget(self.label_2)
+        self.verticalLayout_13.addWidget(self.label_2)
 
-        self.stream_size_combo_box = QComboBox(self.params_group_box)
+        self.stream_size_combo_box = QComboBox(self.groupBox_5)
         self.stream_size_combo_box.setObjectName(u"stream_size_combo_box")
+        self.stream_size_combo_box.setFont(font)
         self.stream_size_combo_box.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-        self.verticalLayout_10.addWidget(self.stream_size_combo_box)
+        self.verticalLayout_13.addWidget(self.stream_size_combo_box)
 
-        self.label_3 = QLabel(self.params_group_box)
+        self.label_3 = QLabel(self.groupBox_5)
         self.label_3.setObjectName(u"label_3")
         self.label_3.setMaximumSize(QSize(16777215, 15))
+        self.label_3.setFont(font1)
 
-        self.verticalLayout_10.addWidget(self.label_3)
+        self.verticalLayout_13.addWidget(self.label_3)
 
-        self.bitrate_line_edit = QLineEdit(self.params_group_box)
+        self.bitrate_line_edit = QLineEdit(self.groupBox_5)
         self.bitrate_line_edit.setObjectName(u"bitrate_line_edit")
         self.bitrate_line_edit.setFont(font)
+        self.bitrate_line_edit.setMaxLength(4)
         self.bitrate_line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.verticalLayout_10.addWidget(self.bitrate_line_edit)
+        self.verticalLayout_13.addWidget(self.bitrate_line_edit)
+
+
+        self.horizontalLayout_7.addWidget(self.groupBox_5)
+
+        self.horizontalSpacer_3 = QSpacerItem(10, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_7.addItem(self.horizontalSpacer_3)
+
+        self.groupBox_6 = QGroupBox(self.params_group_box)
+        self.groupBox_6.setObjectName(u"groupBox_6")
+        sizePolicy2.setHeightForWidth(self.groupBox_6.sizePolicy().hasHeightForWidth())
+        self.groupBox_6.setSizePolicy(sizePolicy2)
+        self.groupBox_6.setFlat(False)
+        self.verticalLayout_10 = QVBoxLayout(self.groupBox_6)
+        self.verticalLayout_10.setObjectName(u"verticalLayout_10")
+        self.label_10 = QLabel(self.groupBox_6)
+        self.label_10.setObjectName(u"label_10")
+        self.label_10.setFont(font1)
+
+        self.verticalLayout_10.addWidget(self.label_10)
+
+        self.stream_fps_line_edit = QLineEdit(self.groupBox_6)
+        self.stream_fps_line_edit.setObjectName(u"stream_fps_line_edit")
+        self.stream_fps_line_edit.setFont(font)
+        self.stream_fps_line_edit.setMaxLength(2)
+        self.stream_fps_line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.verticalLayout_10.addWidget(self.stream_fps_line_edit)
+
+        self.verticalSpacer_3 = QSpacerItem(20, 130, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+
+        self.verticalLayout_10.addItem(self.verticalSpacer_3)
+
+
+        self.horizontalLayout_7.addWidget(self.groupBox_6)
 
 
         self.verticalLayout_9.addWidget(self.params_group_box)
@@ -479,38 +527,62 @@ class Ui_Widget(object):
         self.cfs_group_box = QGroupBox(self.tab_2)
         self.cfs_group_box.setObjectName(u"cfs_group_box")
         self.cfs_group_box.setEnabled(False)
+        sizePolicy1.setHeightForWidth(self.cfs_group_box.sizePolicy().hasHeightForWidth())
+        self.cfs_group_box.setSizePolicy(sizePolicy1)
         self.cfs_group_box.setMaximumSize(QSize(400, 16777215))
-        self.cfs_group_box.setAlignment(Qt.AlignmentFlag.AlignLeading|Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter)
+        self.cfs_group_box.setTitle(u"")
+        self.cfs_group_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.cfs_group_box.setFlat(False)
-        self.verticalLayout_7 = QVBoxLayout(self.cfs_group_box)
+        self.horizontalLayout_8 = QHBoxLayout(self.cfs_group_box)
+        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
+        self.horizontalSpacer_5 = QSpacerItem(50, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_8.addItem(self.horizontalSpacer_5)
+
+        self.verticalLayout_7 = QVBoxLayout()
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.line_edit_c1 = QLineEdit(self.cfs_group_box)
         self.line_edit_c1.setObjectName(u"line_edit_c1")
+        self.line_edit_c1.setMaximumSize(QSize(250, 16777215))
         self.line_edit_c1.setFont(font)
+        self.line_edit_c1.setMaxLength(4)
         self.line_edit_c1.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.verticalLayout_7.addWidget(self.line_edit_c1)
 
         self.line_edit_c2 = QLineEdit(self.cfs_group_box)
         self.line_edit_c2.setObjectName(u"line_edit_c2")
+        self.line_edit_c2.setMaximumSize(QSize(250, 16777215))
         self.line_edit_c2.setFont(font)
+        self.line_edit_c2.setMaxLength(4)
         self.line_edit_c2.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.verticalLayout_7.addWidget(self.line_edit_c2)
 
         self.line_edit_c3 = QLineEdit(self.cfs_group_box)
         self.line_edit_c3.setObjectName(u"line_edit_c3")
+        self.line_edit_c3.setMaximumSize(QSize(250, 16777215))
         self.line_edit_c3.setFont(font)
+        self.line_edit_c3.setMaxLength(4)
         self.line_edit_c3.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.verticalLayout_7.addWidget(self.line_edit_c3)
 
         self.send_cfs_push_button = QPushButton(self.cfs_group_box)
         self.send_cfs_push_button.setObjectName(u"send_cfs_push_button")
+        self.send_cfs_push_button.setEnabled(False)
+        self.send_cfs_push_button.setMaximumSize(QSize(250, 16777215))
         self.send_cfs_push_button.setFont(font)
         self.send_cfs_push_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         self.verticalLayout_7.addWidget(self.send_cfs_push_button)
+
+
+        self.horizontalLayout_8.addLayout(self.verticalLayout_7)
+
+        self.horizontalSpacer_4 = QSpacerItem(50, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_8.addItem(self.horizontalSpacer_4)
 
 
         self.verticalLayout_8.addWidget(self.cfs_group_box)
@@ -585,12 +657,15 @@ class Ui_Widget(object):
         self.tracker_stop_button.setText(QCoreApplication.translate("Widget", u"\u041e\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c \u043e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u043d\u0438\u0435", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QCoreApplication.translate("Widget", u"\u041e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u043d\u0438\u0435", None))
         self.params_group_box.setTitle("")
+        self.groupBox_5.setTitle(QCoreApplication.translate("Widget", u"\u041a\u0430\u0447\u0435\u0441\u0442\u0432\u043e \u043f\u043e\u0442\u043e\u043a\u0430", None))
         self.label_2.setText(QCoreApplication.translate("Widget", u"\u0420\u0430\u0437\u0440\u0435\u0448\u0435\u043d\u0438\u0435 \u043f\u043e\u0442\u043e\u043a\u0430", None))
         self.label_3.setText(QCoreApplication.translate("Widget", u"\u0411\u0438\u0442\u0440\u0435\u0439\u0442 (\u043a\u0431\u0438\u0442/\u0441)", None))
         self.bitrate_line_edit.setText(QCoreApplication.translate("Widget", u"2000", None))
         self.bitrate_line_edit.setPlaceholderText(QCoreApplication.translate("Widget", u"0", None))
+        self.groupBox_6.setTitle(QCoreApplication.translate("Widget", u"\u041f\u0440\u043e\u0447\u0435\u0435", None))
+        self.label_10.setText(QCoreApplication.translate("Widget", u"FPS", None))
+        self.stream_fps_line_edit.setText(QCoreApplication.translate("Widget", u"30", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_5), QCoreApplication.translate("Widget", u"\u041f\u0430\u0440\u0430\u043c\u0435\u0442\u0440\u044b", None))
-        self.cfs_group_box.setTitle("")
         self.line_edit_c1.setPlaceholderText(QCoreApplication.translate("Widget", u"C1", None))
         self.line_edit_c2.setPlaceholderText(QCoreApplication.translate("Widget", u"C2", None))
         self.line_edit_c3.setPlaceholderText(QCoreApplication.translate("Widget", u"C3", None))
