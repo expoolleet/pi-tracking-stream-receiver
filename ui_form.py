@@ -336,6 +336,7 @@ class Ui_Widget(object):
         self.fast_roi_radio_button.setObjectName(u"fast_roi_radio_button")
         self.fast_roi_radio_button.setFont(font1)
         self.fast_roi_radio_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.fast_roi_radio_button.setChecked(True)
 
         self.verticalLayout_6.addWidget(self.fast_roi_radio_button)
 
@@ -371,7 +372,7 @@ class Ui_Widget(object):
         self.roi_width_slider.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.roi_width_slider.setMinimum(32)
         self.roi_width_slider.setMaximum(256)
-        self.roi_width_slider.setValue(128)
+        self.roi_width_slider.setValue(64)
         self.roi_width_slider.setOrientation(Qt.Orientation.Horizontal)
 
         self.verticalLayout_6.addWidget(self.roi_width_slider)
@@ -407,8 +408,8 @@ class Ui_Widget(object):
         self.roi_height_slider.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.roi_height_slider.setMinimum(32)
         self.roi_height_slider.setMaximum(256)
-        self.roi_height_slider.setValue(128)
-        self.roi_height_slider.setSliderPosition(128)
+        self.roi_height_slider.setValue(64)
+        self.roi_height_slider.setSliderPosition(64)
         self.roi_height_slider.setOrientation(Qt.Orientation.Horizontal)
 
         self.verticalLayout_6.addWidget(self.roi_height_slider)
@@ -615,6 +616,7 @@ class Ui_Widget(object):
         self.retranslateUi(Widget)
 
         self.tabWidget.setCurrentIndex(0)
+        self.stream_size_combo_box.setCurrentIndex(-1)
 
 
         QMetaObject.connectSlotsByName(Widget)
@@ -635,7 +637,7 @@ class Ui_Widget(object):
         self.tracking_group_box.setTitle("")
         self.tracker_params_group_box.setTitle(QCoreApplication.translate("Widget", u"\u0422\u0440\u0435\u043a\u0435\u0440", None))
         self.label_6.setText(QCoreApplication.translate("Widget", u"\u0422\u0440\u0435\u043d. \u0438\u0437\u043e.", None))
-        self.training_count_line_edit.setText(QCoreApplication.translate("Widget", u"5", None))
+        self.training_count_line_edit.setText(QCoreApplication.translate("Widget", u"9", None))
         self.label_7.setText(QCoreApplication.translate("Widget", u"\u041a\u0444. \u043e\u0431\u0443\u0447.", None))
         self.learning_rate_line_edit.setText(QCoreApplication.translate("Widget", u"0.015", None))
         self.label_8.setText(QCoreApplication.translate("Widget", u"\u041c\u0430\u043a\u0441. \u043a\u043e\u0440\u0440.", None))
@@ -649,10 +651,10 @@ class Ui_Widget(object):
         self.fast_roi_group_box.setTitle(QCoreApplication.translate("Widget", u"\u0411\u044b\u0441\u0442\u0440\u043e\u0435 \u0432\u044b\u0434\u0435\u043b\u0435\u043d\u0438\u0435 \u043e\u0431\u043b\u0430\u0441\u0442\u0438", None))
         self.fast_roi_radio_button.setText(QCoreApplication.translate("Widget", u"\u0412\u043a\u043b\u044e\u0447\u0438\u0442\u044c", None))
         self.roi_width_label.setText(QCoreApplication.translate("Widget", u"\u0428\u0438\u0440\u0438\u043d\u0430:", None))
-        self.roi_width_line_edit.setText(QCoreApplication.translate("Widget", u"128", None))
+        self.roi_width_line_edit.setText(QCoreApplication.translate("Widget", u"64", None))
         self.label_4.setText(QCoreApplication.translate("Widget", u"px", None))
         self.roi_height_label.setText(QCoreApplication.translate("Widget", u"\u0412\u044b\u0441\u043e\u0442\u0430:", None))
-        self.roi_height_line_edit.setText(QCoreApplication.translate("Widget", u"128", None))
+        self.roi_height_line_edit.setText(QCoreApplication.translate("Widget", u"64", None))
         self.label_5.setText(QCoreApplication.translate("Widget", u"px", None))
         self.tracker_stop_button.setText(QCoreApplication.translate("Widget", u"\u041e\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c \u043e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u043d\u0438\u0435", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QCoreApplication.translate("Widget", u"\u041e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u043d\u0438\u0435", None))

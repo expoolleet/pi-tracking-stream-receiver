@@ -1,6 +1,9 @@
 # This Python file uses the following encoding: utf-8
 import sys
 import datetime
+import threading
+import time
+
 import numpy as np
 
 from PySide6 import QtCore
@@ -28,7 +31,7 @@ import cv2
 from ui_form import Ui_Widget
 
 PARAMS_FILE_NAME = "params"
-
+SAVE_TIMEOUT = 5
 
 class Widget(QWidget):
 
@@ -127,6 +130,8 @@ class Widget(QWidget):
             lambda enabled: self.roi_handler.handle_fast_roi(enabled, self.ui.roi_width_slider.value(), self.ui.roi_height_slider.value()))
 
         self.is_tracking_stopped = False
+
+        self.save_thread = None
 
         self.data = Data(self, __file__)
         self.load_saved_parameters()
@@ -328,50 +333,77 @@ class Widget(QWidget):
 
 
     def load_saved_parameters(self) -> None:
-        saved_data = self.data.from_json(PARAMS_FILE_NAME)
+        saved_data = self.data.load_from_json(PARAMS_FILE_NAME)
         if saved_data is None:
             self.stream_receiver.set_default_stream_size()
             return
-        try:
-            self.ui.kalman_radio_button.setChecked(saved_data["kalman"])
+
+        self.ui.kalman_radio_button.setChecked(saved_data["kalman"])
+        self.stream_receiver.change_stream_size_with_index(saved_data["stream_size_index"])
+        self.ui.fast_roi_radio_button.setChecked(saved_data["fast_roi"])
+        self.ui.roi_width_slider.setValue(saved_data["fast_roi_width"])
+        self.ui.roi_height_slider.setValue(saved_data["fast_roi_height"])
+        self.ui.roi_width_line_edit.setText(str(saved_data["fast_roi_width"]))
+        self.ui.roi_height_line_edit.setText(str(saved_data["fast_roi_height"]))
+
+        if "skip_frames" in saved_data:
             self.ui.skip_frame_line_edit.setText(str(saved_data["skip_frames"]))
-            self.stream_receiver.change_stream_size_with_index(saved_data["stream_size_index"])
+        if "bitrate" in saved_data:
             self.ui.bitrate_line_edit.setText(str(saved_data["bitrate"]))
-            self.ui.fast_roi_radio_button.setChecked(saved_data["fast_roi"])
-            self.ui.roi_width_slider.setValue(saved_data["fast_roi_width"])
-            self.ui.roi_height_slider.setValue(saved_data["fast_roi_height"])
-            self.ui.roi_width_line_edit.setText(str(saved_data["fast_roi_width"]))
-            self.ui.roi_height_line_edit.setText(str(saved_data["fast_roi_height"]))
+        if "training_count_line_edit" in saved_data:
             self.ui.training_count_line_edit.setText(str(saved_data["training_count_line_edit"]))
+        if "learning_rate_line_edit" in saved_data:
             self.ui.learning_rate_line_edit.setText(str(saved_data["learning_rate_line_edit"]))
+        if "max_corr_line_edit" in saved_data:
             self.ui.max_corr_line_edit.setText(str(saved_data["max_corr_line_edit"]))
+        if "sigma_factor_line_edit" in saved_data:
             self.ui.sigma_factor_line_edit.setText(str(saved_data["sigma_factor_line_edit"]))
+        if "stream_fps_line_edit" in saved_data:
             self.ui.stream_fps_line_edit.setText(str(saved_data["stream_fps_line_edit"]))
+        if "line_edit_c1" in saved_data:
             self.ui.line_edit_c1.setText(str(saved_data["line_edit_c1"]))
+        if "line_edit_c2" in saved_data:
             self.ui.line_edit_c2.setText(str(saved_data["line_edit_c2"]))
+        if "line_edit_c3" in saved_data:
             self.ui.line_edit_c3.setText(str(saved_data["line_edit_c3"]))
-        except KeyError:
-            pass
 
 
     def save_parameters(self) -> None:
-        self.data.to_json(PARAMS_FILE_NAME, {
+        params = {
             "kalman": self.ui.kalman_radio_button.isChecked(),
-            "skip_frames": int(self.ui.skip_frame_line_edit.text()),
             "stream_size_index": self.stream_receiver.get_stream_size_index(),
-            "bitrate": int(self.ui.bitrate_line_edit.text()),
             "fast_roi": self.ui.fast_roi_radio_button.isChecked(),
             "fast_roi_height": self.ui.roi_height_slider.value(),
-            "fast_roi_width": self.ui.roi_width_slider.value(),
-            "training_count_line_edit": int(self.ui.training_count_line_edit.text()),
-            "learning_rate_line_edit": float(self.ui.learning_rate_line_edit.text()),
-            "max_corr_line_edit": float(self.ui.max_corr_line_edit.text()),
-            "sigma_factor_line_edit": float(self.ui.sigma_factor_line_edit.text()),
-            "stream_fps_line_edit": int(self.ui.stream_fps_line_edit.text()),
-            "line_edit_c1": int(self.ui.line_edit_c1.text()),
-            "line_edit_c2": int(self.ui.line_edit_c2.text()),
-            "line_edit_c3": int(self.ui.line_edit_c3.text())
-        })
+            "fast_roi_width": self.ui.roi_width_slider.value()
+        }
+
+        if self.ui.skip_frame_line_edit.text() != '':
+            params["skip_frames"] = int(self.ui.skip_frame_line_edit.text())
+        if self.ui.bitrate_line_edit.text() != '':
+            params["bitrate"] = int(self.ui.bitrate_line_edit.text())
+        if self.ui.training_count_line_edit.text() != '':
+            params["training_count_line_edit"] = int(self.ui.training_count_line_edit.text())
+        if self.ui.learning_rate_line_edit.text() != '':
+            params["learning_rate_line_edit"] = float(self.ui.learning_rate_line_edit.text())
+        if self.ui.max_corr_line_edit.text() != '':
+            params["max_corr_line_edit"] = float(self.ui.max_corr_line_edit.text())
+        if self.ui.sigma_factor_line_edit.text() != '':
+            params["sigma_factor_line_edit"] = float(self.ui.sigma_factor_line_edit.text())
+        if self.ui.stream_fps_line_edit.text() != '':
+            params["stream_fps_line_edit"] = int(self.ui.stream_fps_line_edit.text())
+        if self.ui.line_edit_c1.text() != '':
+            params["line_edit_c1"] = int(self.ui.line_edit_c1.text())
+        if self.ui.line_edit_c2.text() != '':
+            params["line_edit_c2"] = int(self.ui.line_edit_c2.text())
+        if self.ui.line_edit_c3.text() != '':
+            params["line_edit_c3"] = int(self.ui.line_edit_c3.text())
+
+        self.save_thread = threading.Thread(target=self._save_parameters, args=(params,))
+        self.save_thread.start()
+
+
+    def _save_parameters(self, params):
+        self.data.save_to_json(PARAMS_FILE_NAME, params)
 
 
     def show_debug_message(self, msg: str) -> None:
@@ -416,7 +448,12 @@ class Widget(QWidget):
         self.save_parameters()
         self.viewer.stop()
         self.zeroconf_handler.clear()
-        e.accept()
+        self.save_thread.join(timeout=SAVE_TIMEOUT)
+        if self.save_thread and self.save_thread.is_alive():
+            self.debug.send("Save thread did not finish in time. Data might be incomplete.")
+            e.ignore()
+        else:
+            e.accept()
 
 
     @QtCore.Slot()

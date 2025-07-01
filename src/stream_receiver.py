@@ -1,14 +1,17 @@
-﻿import ffmpeg
+﻿import os
+import ffmpeg
 import threading
 import time
 import subprocess
 import numpy as np
+from pathlib import Path
 
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Signal
 
 from src.tools import DebugEmitter
 
+FFMPEG_PATH = str(Path(__file__).resolve().parent.parent / "ffmpeg.exe")
 
 input_options = {
     "loglevel": "info",
@@ -72,7 +75,7 @@ class StreamReceiver(QWidget):
             ffmpeg
             .input(url, **input_options)
             .output('pipe:', format='rawvideo', pix_fmt='rgb24')
-            .run_async(pipe_stdout=True, pipe_stderr=True)
+            .run_async(cmd=FFMPEG_PATH, pipe_stdout=True, pipe_stderr=True)
         )
         self.stream_thread = threading.Thread(target=self.read_stream, daemon=True)
         self.stream_thread.start()

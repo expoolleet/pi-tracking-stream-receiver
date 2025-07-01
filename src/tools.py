@@ -1,9 +1,13 @@
 ﻿import os
+import sys
 import numpy as np
 from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtCore import Qt, Signal, QObject
 import logging
 import inspect
+from pathlib import Path
+import datetime
+import time
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -76,14 +80,28 @@ class DebugEmitter(QObject):
         self.last_message = None
         self.last_message_count = 1
 
+        if getattr(sys, 'frozen', False):
+            base_path = Path(sys.executable).parent
+        else:
+            base_path = Path(__file__).resolve().parent.parent
+
+        self.debug_file = base_path / "logs" / f"{time.time()}.log"
+        os.makedirs(Path(base_path) / "logs", exist_ok=True)
+
 
     def send(self, msg: str) -> None:
         try:
             self.debug_signal.emit(msg)
             frame = inspect.stack()[1]
-            logging.debug(f"{os.path.basename(frame.filename)}:{frame.lineno} - {msg}")
+            log_message = f"{os.path.basename(frame.filename)}:{frame.lineno} - {msg}"
+            with self.debug_file.open("a") as file:
+                current_datetime = datetime.datetime.now().strftime("%X")
+                file.write(f"{current_datetime}: {log_message}\n")
+            logging.debug(log_message)
         except (RuntimeError, AttributeError):
             self.debug.send("Warning: signal 'debug_signal' has been deleted because application is closed")
+        except Exception as e:
+            print(f"Exception was occurred when tried to send message: {e}")
         finally:
             if self.last_message == msg:
                 self.last_message_count += 1
