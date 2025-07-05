@@ -571,7 +571,7 @@ class Ui_Widget(object):
 
         self.send_cfs_push_button = QPushButton(self.cfs_group_box)
         self.send_cfs_push_button.setObjectName(u"send_cfs_push_button")
-        self.send_cfs_push_button.setEnabled(False)
+        self.send_cfs_push_button.setEnabled(True)
         self.send_cfs_push_button.setMaximumSize(QSize(250, 16777215))
         self.send_cfs_push_button.setFont(font)
         self.send_cfs_push_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))

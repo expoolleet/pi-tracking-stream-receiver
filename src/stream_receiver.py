@@ -1,6 +1,4 @@
-﻿import os
-import ffmpeg
-import threading
+﻿import threading
 import time
 import subprocess
 import numpy as np
@@ -11,14 +9,13 @@ from PySide6.QtCore import Signal
 
 from src.tools import DebugEmitter
 
-FFMPEG_PATH = str(Path(__file__).resolve().parent.parent / "ffmpeg.exe")
+FFMPEG_PATH = str(Path(__file__).resolve().parent.parent / "ffmpeg")
 
 input_options = {
     "loglevel": "info",
-    "fflags": "nobuffer",
-    "fflags": "discardcorrupt",
+    "fflags": ["nobuffer", "discardcorrupt"],
     "flags": "low_delay",
-    "pkt_size": 1316,
+    "pkt_size": "1316",
     "probesize": "100k"
 }
 
@@ -28,7 +25,7 @@ TIME_OUT = 1
 class StreamSize:
     SIZE_720 = (0, (960, 720))
     SIZE_480 = (1, (640, 480))
-    SIZE_360 = (2, (480, 360))
+    SIZE_360 = (2, (448, 360))
     SIZE_240 = (3, (320, 240))
     SIZE_144 = (4, (192, 144))
 
@@ -71,12 +68,20 @@ class StreamReceiver(QWidget):
         :param url:
         :return None:
         """
-        self.ffmpeg_process = (
-            ffmpeg
-            .input(url, **input_options)
-            .output('pipe:', format='rawvideo', pix_fmt='rgb24')
-            .run_async(cmd=FFMPEG_PATH, pipe_stdout=True, pipe_stderr=True)
-        )
+        args = [
+            FFMPEG_PATH,
+            "-loglevel", input_options["loglevel"],
+            "-fflags", input_options["fflags"][0],
+            "-fflags", input_options["fflags"][1],
+            "-flags", input_options["flags"],
+            "-pkt_size", input_options["pkt_size"],
+            "-probesize", input_options["probesize"],
+            "-i", url,
+            "-f", "rawvideo",
+            "-pix_fmt", "rgb24",
+            "pipe:"
+        ]
+        self.ffmpeg_process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=subprocess.CREATE_NO_WINDOW)
         self.stream_thread = threading.Thread(target=self.read_stream, daemon=True)
         self.stream_thread.start()
         self.err_thread = threading.Thread(target=self.monitor_stderr, daemon=True)
@@ -118,7 +123,6 @@ class StreamReceiver(QWidget):
         if self.stream_width == 0 or self.stream_height == 0:
             self.debug.send("Stream size was not set, exiting...")
             self.stop()
-
         while True:
             try:
                 if self.ffmpeg_process:
@@ -169,11 +173,11 @@ class StreamReceiver(QWidget):
         self.change_stream_size_with_index_signal.emit(index)
 
 
-    def set_default_stream_size(self):
+    def set_default_stream_size(self) -> None:
         self.set_stream_size(self.default_stream_size)
 
 
-    def get_stream_size_index(self):
+    def get_stream_size_index(self) -> int:
         size = (self.stream_width, self.stream_height)
         if size == StreamSize.SIZE_720[1]:
             return StreamSize.SIZE_720[0]

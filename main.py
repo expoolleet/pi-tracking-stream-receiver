@@ -44,6 +44,8 @@ class Widget(QWidget):
         self.ui = Ui_Widget()
         self.ui.setupUi(self)
 
+        self.ui.send_cfs_push_button.setEnabled(True) # fix
+
         validator = QRegularExpressionValidator(QRegularExpression(r"[0-9]+"))
         self.ui.skip_frame_line_edit.setValidator(validator)
         self.ui.line_edit_c1.setValidator(validator)
