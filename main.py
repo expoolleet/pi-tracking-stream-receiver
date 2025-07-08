@@ -58,7 +58,7 @@ class Widget(QWidget):
         self.ui.stream_fps_line_edit.setValidator(validator)
 
         validator = QRegularExpressionValidator(QRegularExpression(r"[+-]?([0-9]*[.])?[0-9]+"))
-        self.ui.learning_rate_line_edit.setValidator(validator)
+        self.ui.alpha_smoothing_line_edit.setValidator(validator)
         self.ui.max_corr_line_edit.setValidator(validator)
         self.ui.sigma_factor_line_edit.setValidator(validator)
 
@@ -214,7 +214,7 @@ class Widget(QWidget):
             "skip_frames": int(self.ui.skip_frame_line_edit.text()),
             "stream_size": self.stream_receiver.get_stream_size(),
             "training_images_count": int(self.ui.training_count_line_edit.text()),
-            "learning_rate": float(self.ui.learning_rate_line_edit.text()),
+            "alpha_smoothing": float(self.ui.alpha_smoothing_line_edit.text()),
             "max_corr": float(self.ui.max_corr_line_edit.text()),
             "sigma_factor": float(self.ui.sigma_factor_line_edit.text())
         }
@@ -354,8 +354,8 @@ class Widget(QWidget):
             self.ui.bitrate_line_edit.setText(str(saved_data["bitrate"]))
         if "training_count_line_edit" in saved_data:
             self.ui.training_count_line_edit.setText(str(saved_data["training_count_line_edit"]))
-        if "learning_rate_line_edit" in saved_data:
-            self.ui.learning_rate_line_edit.setText(str(saved_data["learning_rate_line_edit"]))
+        if "alpha_smoothing_line_edit" in saved_data:
+            self.ui.alpha_smoothing_line_edit.setText(str(saved_data["alpha_smoothing_line_edit"]))
         if "max_corr_line_edit" in saved_data:
             self.ui.max_corr_line_edit.setText(str(saved_data["max_corr_line_edit"]))
         if "sigma_factor_line_edit" in saved_data:
@@ -385,8 +385,8 @@ class Widget(QWidget):
             params["bitrate"] = int(self.ui.bitrate_line_edit.text())
         if self.ui.training_count_line_edit.text() != '':
             params["training_count_line_edit"] = int(self.ui.training_count_line_edit.text())
-        if self.ui.learning_rate_line_edit.text() != '':
-            params["learning_rate_line_edit"] = float(self.ui.learning_rate_line_edit.text())
+        if self.ui.alpha_smoothing_line_edit.text() != '':
+            params["alpha_smoothing_line_edit"] = float(self.ui.alpha_smoothing_line_edit.text())
         if self.ui.max_corr_line_edit.text() != '':
             params["max_corr_line_edit"] = float(self.ui.max_corr_line_edit.text())
         if self.ui.sigma_factor_line_edit.text() != '':
