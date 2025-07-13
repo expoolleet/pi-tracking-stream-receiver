@@ -8,15 +8,21 @@ from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Signal
 
 from src.tools import DebugEmitter
+from src.data import Data
 
-FFMPEG_PATH = str(Path(__file__).resolve().parent.parent / "ffmpeg")
+MAIN_PATH = Path(__file__).resolve().parent.parent
 
-input_options = {
+FFMPEG_PATH = str(MAIN_PATH / "ffmpeg")
+
+INPUT_OPTIONS_FILE_NAME = "ffmpeg_input_options"
+
+default_input_options = {
     "loglevel": "info",
     "fflags": ["nobuffer", "discardcorrupt"],
     "flags": "low_delay",
     "pkt_size": "1316",
-    "probesize": "100k"
+    "probesize": "1M",
+    "analyzeduration": "2M"
 }
 
 TIME_OUT = 1
@@ -47,6 +53,36 @@ class StreamReceiver(QWidget):
         self.stream_height = 0
         self.stream_lock = threading.Lock()
         self.debug = DebugEmitter()
+        self.data = Data(self, MAIN_PATH)
+
+        if (Path(MAIN_PATH) / (INPUT_OPTIONS_FILE_NAME + ".json")).exists():
+            self.input_options = self.data.load_from_json(INPUT_OPTIONS_FILE_NAME)
+        else:
+            self.input_options = default_input_options
+            self.data.save_to_json(INPUT_OPTIONS_FILE_NAME, self.input_options)
+
+
+    def get_ffmpeg_args(self, url):
+        input_options_args = []
+        for key, value in self.input_options.items():
+            if isinstance(value, list):
+                for i in range(len(value)):
+                    input_options_args.append(f"-{key}")
+                    input_options_args.append(str(value[i]))
+            else:
+                input_options_args.append(f"-{key}")
+                input_options_args.append(str(value))
+
+        args = [
+            FFMPEG_PATH,
+            *input_options_args,
+            "-i", url,
+            "-f", "rawvideo",
+            "-pix_fmt", "rgb24",
+            "pipe:"
+        ]
+
+        return args
 
 
     def set_stream_size(self, size) -> None:
@@ -68,19 +104,9 @@ class StreamReceiver(QWidget):
         :param url:
         :return None:
         """
-        args = [
-            FFMPEG_PATH,
-            "-loglevel", input_options["loglevel"],
-            "-fflags", input_options["fflags"][0],
-            "-fflags", input_options["fflags"][1],
-            "-flags", input_options["flags"],
-            "-pkt_size", input_options["pkt_size"],
-            "-probesize", input_options["probesize"],
-            "-i", url,
-            "-f", "rawvideo",
-            "-pix_fmt", "rgb24",
-            "pipe:"
-        ]
+
+        args = self.get_ffmpeg_args(url)
+        self.debug.send(args)
         self.ffmpeg_process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=subprocess.CREATE_NO_WINDOW)
         self.stream_thread = threading.Thread(target=self.read_stream, daemon=True)
         self.stream_thread.start()

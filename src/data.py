@@ -7,7 +7,7 @@ from PySide6.QtCore import QObject
 from src.tools import DebugEmitter
 
 class Data(QObject):
-    def __init__(self, parent=None, path=None, file_name=None):
+    def __init__(self, parent=None, path=None, is_parent=False):
         super().__init__(parent)
 
         if getattr(sys, 'frozen', False):
@@ -15,8 +15,12 @@ class Data(QObject):
         else:
             base_path = Path(path).resolve()
 
-        self.save_path = base_path.parent
+        if is_parent:
+            self.save_path = base_path.parent
+        else:
+            self.save_path = base_path
         self.debug = DebugEmitter()
+
 
     def save_to_json(self, file_name, data):
         path = self.save_path / (file_name + ".json")

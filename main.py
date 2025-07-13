@@ -2,7 +2,6 @@
 import sys
 import datetime
 import threading
-import time
 
 import numpy as np
 
@@ -135,7 +134,7 @@ class Widget(QWidget):
 
         self.save_thread = None
 
-        self.data = Data(self, __file__)
+        self.data = Data(self, __file__, is_parent=True)
         self.load_saved_parameters()
 
 
