@@ -120,7 +120,7 @@ class Viewer(QWidget):
         Updates the view from the system camera
         :return None:
         """
-        self.update_frame(lambda: self.system_camera.read()[1] if self.system_camera.read()[0] else BLACK_FRAME)
+        self.update_frame(lambda: cv2.cvtColor(self.system_camera.read()[1], cv2.COLOR_BGR2RGB) if self.system_camera.read()[0] else BLACK_FRAME)
 
 
     def change_stream_url(self, stream_params) -> None:
