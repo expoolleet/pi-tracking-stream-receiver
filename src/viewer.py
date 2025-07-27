@@ -1,4 +1,6 @@
-﻿from PySide6 import QtCore
+﻿from collections.abc import Callable
+
+from PySide6 import QtCore
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QPixmap
@@ -10,6 +12,7 @@ import threading
 import numpy as np
 import time
 import sys
+import cv2
 from pathlib import Path
 
 
@@ -20,6 +23,8 @@ else:
 
 NO_CONNECTION_IMAGE = base_path / "img" / "no_connection.png"
 CONNECTION_ESTABLISHED_IMAGE = base_path / "img" / "connection_established.png"
+
+BLACK_FRAME = np.zeros((1, 1, 3), dtype=np.uint8)
 
 class Viewer(QWidget):
 
@@ -44,6 +49,10 @@ class Viewer(QWidget):
 
         self.frame_rate = frame_rate
         self.frame_time = 1.0 / frame_rate
+
+        self.system_camera = cv2.VideoCapture(0)
+
+        self._is_playing_lock = threading.Lock()
 
 
     def load_connection_established_view(self) -> None:
@@ -73,15 +82,19 @@ class Viewer(QWidget):
         self.frame_time = 1 / frame_rate
 
 
-    def update(self) -> None:
+    def update_frame(self, update_callback: Callable) -> None:
         """
-        Updates the view by sending signal with current frame
+        Updates the view from the callback by sending signal with current frame
         :return None:
         """
-        while self.is_playing:
+        while True:
+            with self._is_playing_lock:
+                is_playing = self.is_playing
+            if not is_playing:
+                break
             start_time = time.time()
             try:
-                frame = self.stream_receiver.get_current_frame()
+                frame = update_callback()
                 if frame is None:
                     continue
                 self.current_frame = frame
@@ -89,9 +102,25 @@ class Viewer(QWidget):
             except Exception as e:
                 self.debug.send(f"Error updating view: {e}")
 
-            end_time = time.time() - start_time
-            if end_time < self.frame_time:
-                time.sleep(self.frame_time - end_time)
+            elapsed_time = time.time() - start_time
+            if elapsed_time < self.frame_time:
+                time.sleep(self.frame_time - elapsed_time)
+
+
+    def update_from_stream(self) -> None:
+        """
+        Updates the view from the stream
+        :return None:
+        """
+        self.update_frame(self.stream_receiver.get_current_frame)
+
+
+    def update_from_system_camera(self) -> None:
+        """
+        Updates the view from the system camera
+        :return None:
+        """
+        self.update_frame(lambda: self.system_camera.read()[1] if self.system_camera.read()[0] else BLACK_FRAME)
 
 
     def change_stream_url(self, stream_params) -> None:
@@ -111,9 +140,18 @@ class Viewer(QWidget):
         Play the stream
         :return None:
         """
-        self.is_playing = True
-        self.stream_receiver.start(self.stream_url)
-        self.view_thread = threading.Thread(target=self.update, daemon=True)
+        with self._is_playing_lock:
+            self.is_playing = True
+
+        if self.ui.stream_check_box.isChecked():
+            self.stream_receiver.start(self.stream_url)
+            self.view_thread = threading.Thread(target=self.update_from_stream, daemon=True)
+        if self.ui.transmitter_check_box.isChecked():
+            self.view_thread = threading.Thread(target=self.update_from_system_camera, daemon=True)
+
+        if self.view_thread is None:
+            self.debug.send("Warning: View thread is None!")
+            return
         self.view_thread.start()
         self.play_pressed_signal.emit()
 
@@ -123,11 +161,14 @@ class Viewer(QWidget):
         Stop the stream
         :return None:
         """
-        self.is_playing = False
-        self.stream_receiver.stop()
+        with self._is_playing_lock:
+            self.is_playing = False
+
+        if self.ui.stream_check_box.isChecked():
+            self.stream_receiver.stop()
+
         self.load_connection_established_view()
         self.stop_pressed_signal.emit()
-
 
 
     def toggle_view(self) -> None:

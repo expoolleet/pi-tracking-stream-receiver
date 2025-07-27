@@ -9,3 +9,6 @@
     CHANGE_STREAM_RES = "change_stream_res"
     TRACKER_DATA = "tracker_data"
     SEND_CFS = "send_cfs"
+    REQUEST_TRACKING = "request_tracking"
+    START_TRANSMISSION = "start_transmission"
+    STOP_TRANSMISSION = "stop_transmission"

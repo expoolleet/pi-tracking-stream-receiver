@@ -99,7 +99,7 @@ class DebugEmitter(QObject):
                 file.write(f"{current_datetime}: {log_message}\n")
             logging.debug(log_message)
         except (RuntimeError, AttributeError):
-            self.debug.send("Warning: signal 'debug_signal' has been deleted because application is closed")
+            print("Warning: signal 'debug_signal' has been deleted because application is closed")
         except Exception as e:
             print(f"Exception was occurred when tried to send message: {e}")
         finally:

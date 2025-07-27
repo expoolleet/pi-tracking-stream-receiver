@@ -182,6 +182,10 @@ class ROIHandler(QObject):
 
 
     def on_key_pressed_try_send_roi(self) -> None:
+        self.try_send_roi_to_server()
+
+
+    def try_send_roi_to_server(self):
         if not self.enabled or self.current_state != ROIState.FAST_SELECTING:
             return
         self.debug.send("Sending ROI to the server...")

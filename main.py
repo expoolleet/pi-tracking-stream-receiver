@@ -10,10 +10,9 @@ from PySide6.QtWidgets import QApplication, QWidget, QMessageBox
 from PySide6.QtCore import Qt, QObject, QEvent, QRegularExpression, Signal
 from PySide6.QtGui import QMouseEvent, QRegularExpressionValidator, QIcon, QWheelEvent
 
-
 from src.roi_handler import ROIHandler, ROIState
 from src.socket_handler import SocketHandler
-from src.stream_receiver import StreamReceiver
+from src.stream_receiver import StreamReceiver, StreamSize
 from src.viewer import Viewer
 from src.tools import numpy_to_pixmap, scale_pixmap, DebugEmitter
 from src.command import Command
@@ -31,6 +30,7 @@ from ui_form import Ui_Widget
 
 PARAMS_FILE_NAME = "params"
 SAVE_TIMEOUT = 5
+
 
 class Widget(QWidget):
 
@@ -97,7 +97,9 @@ class Widget(QWidget):
         self.socket_handler = SocketHandler(self)
         self.socket_handler.update_roi_signal.connect(self.on_roi_update)
         self.socket_handler.stop_tracking_signal.connect(self.roi_handler.try_reset_roi)
+        self.socket_handler.stop_tracking_signal.connect(self.handle_ui_when_tracker_is_stopped)
         self.socket_handler.update_tracker_data_signal.connect(self.update_tracker_data)
+        self.socket_handler.start_tracing_signal.connect(self.roi_handler.try_send_roi_to_server)
 
         self.debug = DebugEmitter(self)
         self.debug.debug_signal.connect(self.show_debug_message)
@@ -127,8 +129,15 @@ class Widget(QWidget):
         self.ui.roi_width_line_edit.textChanged.connect(self.handle_roi_width)
         self.ui.roi_height_line_edit.textChanged.connect(self.handle_roi_height)
 
+        self.ui.roi_frame_brightness_slider.valueChanged.connect(self.handle_roi_label_brightness)
+        self.ui.roi_frame_contrast_slider.valueChanged.connect(self.handle_roi_label_contrast)
+
         self.ui.fast_roi_radio_button.toggled.connect(
             lambda enabled: self.roi_handler.handle_fast_roi(enabled, self.ui.roi_width_slider.value(), self.ui.roi_height_slider.value()))
+
+        self.image_checkboxes = [self.ui.stream_check_box, self.ui.transmitter_check_box]
+        self.ui.stream_check_box.stateChanged.connect(lambda state: self.handle_image_checkbox(self.ui.stream_check_box, state))
+        self.ui.transmitter_check_box.stateChanged.connect(lambda state: self.handle_image_checkbox(self.ui.transmitter_check_box, state))
 
         self.is_tracking_stopped = False
 
@@ -137,6 +146,15 @@ class Widget(QWidget):
         self.data = Data(self, __file__, is_parent=True)
         self.load_saved_parameters()
 
+
+    def handle_image_checkbox(self, check_box, state):
+        if check_box == self.ui.stream_check_box:
+            if state == Qt.CheckState.Checked.value:
+                self.ui.stream_quality_group_box.setEnabled(True)
+        if check_box == self.ui.transmitter_check_box:
+            if state == Qt.CheckState.Checked.value:
+                self.ui.stream_quality_group_box.setEnabled(False)
+                self.stream_receiver.change_stream_size_with_index(StreamSize.SIZE_480[0])
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         if self.roi_handler.current_state != ROIState.FAST_SELECTING:
@@ -203,6 +221,18 @@ class Widget(QWidget):
             self.roi_handler.handle_fast_roi(True, self.ui.roi_width_slider.value(), height)
 
 
+    def handle_roi_label_brightness(self, value):
+        maximum_brightness = self.ui.roi_frame_brightness_slider.maximum()
+        brightness = int((1 + value / maximum_brightness) * 100)
+        self.ui.roi_brightness_label.setText(f"{ROI_BRIGHTNESS_LABEL} {str(brightness)}%")
+
+
+    def handle_roi_label_contrast(self, value):
+        maximum_contrast = self.ui.roi_frame_contrast_slider.maximum()
+        contrast = int((1 + value / maximum_contrast  - 0.5) * 100)
+        self.ui.roi_contrast_label.setText(f"{ROI_CONTRAST_LABEL} {str(contrast)}%")
+
+
     def enable_tracking(self, roi) -> None:
         if not self.viewer.is_playing:
             return
@@ -225,19 +255,28 @@ class Widget(QWidget):
 
 
     def start_stream(self) -> None:
-        stream_size = self.stream_receiver.get_stream_size()
-        data = {
-            "stream_size": stream_size,
-            "bitrate": int(self.ui.bitrate_line_edit.text()),
-            "frame_rate": int(self.ui.stream_fps_line_edit.text())
-        }
-        self.socket_handler.send(Command.START_STREAM, data)
+        if self.ui.stream_check_box.isChecked():
+            stream_size = self.stream_receiver.get_stream_size()
+            data = {
+                "stream_size": stream_size,
+                "bitrate": int(self.ui.bitrate_line_edit.text()),
+                "frame_rate": int(self.ui.stream_fps_line_edit.text())
+            }
+            self.socket_handler.send(Command.START_STREAM, data)
+        if self.ui.transmitter_check_box.isChecked():
+            data = {
+                "frame_rate": int(self.ui.stream_fps_line_edit.text())
+            }
+            self.socket_handler.send(Command.START_TRANSMISSION, data)
         if self.ui.fast_roi_radio_button.isChecked():
             self.roi_handler.handle_fast_roi(True, self.ui.roi_width_slider.value(), self.ui.roi_height_slider.value(), True)
 
 
     def stop_stream(self) -> None:
-        self.socket_handler.send(Command.STOP_STREAM)
+        if self.ui.stream_check_box.isChecked():
+            self.socket_handler.send(Command.STOP_STREAM)
+        if self.ui.transmitter_check_box.isChecked():
+            self.socket_handler.send(Command.STOP_TRANSMISSION)
 
 
     def update_view_label(self, frame: np.ndarray) -> None:
@@ -271,13 +310,20 @@ class Widget(QWidget):
             return
         x, y = self.roi_handler.roi[0], self.roi_handler.roi[1]
         w, h = self.roi_handler.roi[2], self.roi_handler.roi[3]
-        brightness = 2
+        current_brightness_value = self.ui.roi_frame_brightness_slider.value()
+        maximum_brightness = self.ui.roi_frame_brightness_slider.maximum()
+        brightness = current_brightness_value / maximum_brightness
+
+        current_contrast_value = self.ui.roi_frame_contrast_slider.value()
+        maximum_contrast = self.ui.roi_frame_contrast_slider.maximum()
+        contrast = 1 + current_contrast_value / maximum_contrast  - 0.5
+
         template = np.array(frame[y:y+h, x:x+w, :], order='C')
         if template.shape != (h, w, 3) and state != ROIState.TRACKING :
             self.roi_handler.reset_fast_roi()
             return
-        template = template.astype(np.float32) * brightness
-        template = np.clip(template, 0, 255).astype(np.uint8)
+        template = contrast * (template.astype(np.float32) / 255.0) + brightness
+        template = np.clip(template * 255.0, 0, 255).astype(np.uint8)
         pixmap = numpy_to_pixmap(template)
         self.ui.roi_label.setPixmap(scale_pixmap(pixmap, self.ui.roi_label.size()))
 
@@ -367,6 +413,15 @@ class Widget(QWidget):
             self.ui.line_edit_c2.setText(str(saved_data["line_edit_c2"]))
         if "line_edit_c3" in saved_data:
             self.ui.line_edit_c3.setText(str(saved_data["line_edit_c3"]))
+        if "roi_frame_brightness" in saved_data:
+            self.ui.roi_frame_brightness_slider.setValue(int(saved_data["roi_frame_brightness"]))
+        if "roi_frame_contrast" in saved_data:
+            self.ui.roi_frame_contrast_slider.setValue(int(saved_data["roi_frame_contrast"]))
+        if "image_check_box" in saved_data:
+            for image_cb in self.image_checkboxes:
+                if image_cb.objectName() == saved_data["image_check_box"]:
+                    image_cb.setChecked(True)
+                    break
 
 
     def save_parameters(self) -> None:
@@ -375,8 +430,15 @@ class Widget(QWidget):
             "stream_size_index": self.stream_receiver.get_stream_size_index(),
             "fast_roi": self.ui.fast_roi_radio_button.isChecked(),
             "fast_roi_height": self.ui.roi_height_slider.value(),
-            "fast_roi_width": self.ui.roi_width_slider.value()
+            "fast_roi_width": self.ui.roi_width_slider.value(),
+            "roi_frame_brightness": self.ui.roi_frame_brightness_slider.value(),
+            "roi_frame_contrast": self.ui.roi_frame_contrast_slider.value()
         }
+
+        for image_cb in self.image_checkboxes:
+            if image_cb.isChecked():
+                params["image_check_box"] = image_cb.objectName()
+                break
 
         if self.ui.skip_frame_line_edit.text() != '':
             params["skip_frames"] = int(self.ui.skip_frame_line_edit.text())
@@ -457,6 +519,16 @@ class Widget(QWidget):
             e.accept()
 
 
+    def handle_ui_when_tracker_is_stopped(self) -> None:
+        self.is_tracking_stopped = True
+        self.ui.tracker_stop_button.setEnabled(False)
+        self.ui.kalman_group_box.setEnabled(True)
+        self.ui.fast_roi_group_box.setEnabled(True)
+        self.ui.tracker_params_group_box.setEnabled(True)
+        if self.ui.fast_roi_radio_button.isChecked():
+            self.roi_handler.handle_fast_roi(True, self.ui.roi_width_slider.value(), self.ui.roi_height_slider.value(),True)
+
+
     @QtCore.Slot()
     def on_connect_button_clicked(self) -> None:
         self.zeroconf_handler.browse()
@@ -482,13 +554,7 @@ class Widget(QWidget):
     def on_tracker_stop_button_clicked(self) -> None:
         if not self.ui.tracker_stop_button.isEnabled():
             return
-        self.is_tracking_stopped = True
-        self.ui.tracker_stop_button.setEnabled(False)
-        self.ui.kalman_group_box.setEnabled(True)
-        self.ui.fast_roi_group_box.setEnabled(True)
-        self.ui.tracker_params_group_box.setEnabled(True)
-        if self.ui.fast_roi_radio_button.isChecked():
-            self.roi_handler.handle_fast_roi(True, self.ui.roi_width_slider.value(), self.ui.roi_height_slider.value(), True)
+        self.handle_ui_when_tracker_is_stopped()
         self.socket_handler.send(Command.STOP_TRACKING)
 
 
@@ -538,7 +604,6 @@ class MouseEventFilter(QObject):
 
 
 class KeyPressFilter(QObject):
-
     def __init__(self, callback_return_key=None, callback_escape_key=None):
         super().__init__()
         self.callback_return_key = callback_return_key

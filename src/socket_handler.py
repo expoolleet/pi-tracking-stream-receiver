@@ -20,6 +20,7 @@ class SocketData:
 class SocketHandler(QObject):
 
     update_roi_signal = Signal(np.ndarray)
+    start_tracing_signal = Signal()
     stop_tracking_signal = Signal()
     disconnect_from_server_signal = Signal()
     update_tracker_data_signal = Signal(dict)
@@ -67,29 +68,30 @@ class SocketHandler(QObject):
 
 
     def handle_messages(self, messages) -> None:
-        if messages is None:
-            return
-        for message in messages:
-            command = message["command"] if "command" in message else Command.UNKNOWN
-            if self.show_only_limited_commands(command):
-                self.debug.send(f"server sent: {message}")
-            if "roi" in message:
-                received_roi = message["roi"]
-                try:
+        try:
+            if messages is None:
+                return
+            for message in messages:
+                command = message["command"] if "command" in message else Command.UNKNOWN
+                if self.show_only_limited_commands(command):
+                    self.debug.send(f"server sent: {message}")
+                if "roi" in message:
+                    received_roi = message["roi"]
                     self.update_roi_signal.emit(received_roi)
-                except RuntimeError:
-                    self.debug.send("Warning: signal 'update_roi_signal' has been deleted because application is closed")
-            elif "command" in message:
-                if message["command"] == Command.STOP_TRACKING:
-                    self.stop_tracking_signal.emit()
-                elif message["command"] == Command.DISCONNECT:
-                    self.disconnect_from_server_signal.emit()
-                elif message["command"] == Command.TRACKER_DATA:
-                    self.update_tracker_data_signal.emit(message["data"])
-                    self.update_roi_signal.emit(message["data"]["roi"])
-            else:
-                self.debug.send(f"Received unknown message: {message}")
-
+                elif "command" in message:
+                    if message["command"] == Command.STOP_TRACKING:
+                        self.stop_tracking_signal.emit()
+                    elif message["command"] == Command.DISCONNECT:
+                        self.disconnect_from_server_signal.emit()
+                    elif message["command"] == Command.TRACKER_DATA:
+                        self.update_tracker_data_signal.emit(message["data"])
+                        self.update_roi_signal.emit(message["data"]["roi"])
+                    elif message["command"] == Command.REQUEST_TRACKING:
+                        self.start_tracing_signal.emit()
+                else:
+                    self.debug.send(f"Received unknown message: {message}")
+        except RuntimeError:
+            self.debug.send("Warning: signal 'update_roi_signal' has been deleted because application is closed")
 
     def show_only_limited_commands(self, command):
         if command == Command.STOP_TRACKING \

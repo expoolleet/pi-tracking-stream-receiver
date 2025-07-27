@@ -15,10 +15,11 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGroupBox,
-    QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit,
-    QPushButton, QRadioButton, QSizePolicy, QSlider,
-    QSpacerItem, QTabWidget, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
+    QGroupBox, QHBoxLayout, QLabel, QLineEdit,
+    QPlainTextEdit, QPushButton, QRadioButton, QSizePolicy,
+    QSlider, QSpacerItem, QTabWidget, QVBoxLayout,
+    QWidget)
 
 class Ui_Widget(object):
     def setupUi(self, Widget):
@@ -62,7 +63,7 @@ class Ui_Widget(object):
 
         self.horizontalLayout.addWidget(self.groupBox_3)
 
-        self.horizontalSpacer_2 = QSpacerItem(20, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.horizontalSpacer_2 = QSpacerItem(20, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer_2)
 
@@ -88,15 +89,30 @@ class Ui_Widget(object):
 
         self.horizontalLayout.addWidget(self.view_label)
 
-        self.roi_label = QLabel(self.groupBox_4)
-        self.roi_label.setObjectName(u"roi_label")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        self.horizontalSpacer_6 = QSpacerItem(20, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_6)
+
+        self.groupBox_7 = QGroupBox(self.groupBox_4)
+        self.groupBox_7.setObjectName(u"groupBox_7")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.roi_label.sizePolicy().hasHeightForWidth())
-        self.roi_label.setSizePolicy(sizePolicy1)
+        sizePolicy1.setHeightForWidth(self.groupBox_7.sizePolicy().hasHeightForWidth())
+        self.groupBox_7.setSizePolicy(sizePolicy1)
+        self.groupBox_7.setMinimumSize(QSize(350, 0))
+        self.groupBox_7.setMaximumSize(QSize(500, 500))
+        self.verticalLayout_14 = QVBoxLayout(self.groupBox_7)
+        self.verticalLayout_14.setObjectName(u"verticalLayout_14")
+        self.roi_label = QLabel(self.groupBox_7)
+        self.roi_label.setObjectName(u"roi_label")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.roi_label.sizePolicy().hasHeightForWidth())
+        self.roi_label.setSizePolicy(sizePolicy2)
         self.roi_label.setMinimumSize(QSize(350, 0))
-        self.roi_label.setMaximumSize(QSize(350, 350))
+        self.roi_label.setMaximumSize(QSize(500, 500))
         self.roi_label.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
 #if QT_CONFIG(tooltip)
         self.roi_label.setToolTip(u"")
@@ -106,7 +122,43 @@ class Ui_Widget(object):
         self.roi_label.setScaledContents(False)
         self.roi_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.horizontalLayout.addWidget(self.roi_label)
+        self.verticalLayout_14.addWidget(self.roi_label)
+
+        self.roi_brightness_label = QLabel(self.groupBox_7)
+        self.roi_brightness_label.setObjectName(u"roi_brightness_label")
+        self.roi_brightness_label.setMaximumSize(QSize(16777215, 15))
+
+        self.verticalLayout_14.addWidget(self.roi_brightness_label)
+
+        self.roi_frame_brightness_slider = QSlider(self.groupBox_7)
+        self.roi_frame_brightness_slider.setObjectName(u"roi_frame_brightness_slider")
+        self.roi_frame_brightness_slider.setMaximumSize(QSize(16777215, 15))
+        self.roi_frame_brightness_slider.setMinimum(-100)
+        self.roi_frame_brightness_slider.setMaximum(100)
+        self.roi_frame_brightness_slider.setSingleStep(1)
+        self.roi_frame_brightness_slider.setOrientation(Qt.Orientation.Horizontal)
+
+        self.verticalLayout_14.addWidget(self.roi_frame_brightness_slider)
+
+        self.roi_contrast_label = QLabel(self.groupBox_7)
+        self.roi_contrast_label.setObjectName(u"roi_contrast_label")
+        self.roi_contrast_label.setMaximumSize(QSize(16777215, 15))
+
+        self.verticalLayout_14.addWidget(self.roi_contrast_label)
+
+        self.roi_frame_contrast_slider = QSlider(self.groupBox_7)
+        self.roi_frame_contrast_slider.setObjectName(u"roi_frame_contrast_slider")
+        self.roi_frame_contrast_slider.setMaximumSize(QSize(16777215, 15))
+        self.roi_frame_contrast_slider.setMinimum(0)
+        self.roi_frame_contrast_slider.setMaximum(100)
+        self.roi_frame_contrast_slider.setPageStep(50)
+        self.roi_frame_contrast_slider.setValue(50)
+        self.roi_frame_contrast_slider.setOrientation(Qt.Orientation.Horizontal)
+
+        self.verticalLayout_14.addWidget(self.roi_frame_contrast_slider)
+
+
+        self.horizontalLayout.addWidget(self.groupBox_7)
 
         self.horizontalSpacer = QSpacerItem(20, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
@@ -117,8 +169,8 @@ class Ui_Widget(object):
 
         self.connection_label = QLabel(Widget)
         self.connection_label.setObjectName(u"connection_label")
-        sizePolicy1.setHeightForWidth(self.connection_label.sizePolicy().hasHeightForWidth())
-        self.connection_label.setSizePolicy(sizePolicy1)
+        sizePolicy2.setHeightForWidth(self.connection_label.sizePolicy().hasHeightForWidth())
+        self.connection_label.setSizePolicy(sizePolicy2)
         self.connection_label.setMinimumSize(QSize(0, 0))
         self.connection_label.setMaximumSize(QSize(16777215, 20))
         self.connection_label.setFont(font)
@@ -134,11 +186,11 @@ class Ui_Widget(object):
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.controlsBox = QGroupBox(self.groupBox_2)
         self.controlsBox.setObjectName(u"controlsBox")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.controlsBox.sizePolicy().hasHeightForWidth())
-        self.controlsBox.setSizePolicy(sizePolicy2)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.controlsBox.sizePolicy().hasHeightForWidth())
+        self.controlsBox.setSizePolicy(sizePolicy3)
         self.controlsBox.setMinimumSize(QSize(0, 240))
         self.controlsBox.setMaximumSize(QSize(170, 16777215))
         self.controlsBox.setFlat(False)
@@ -194,11 +246,11 @@ class Ui_Widget(object):
 
         self.tabWidget = QTabWidget(self.groupBox_2)
         self.tabWidget.setObjectName(u"tabWidget")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
-        self.tabWidget.setSizePolicy(sizePolicy3)
+        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        sizePolicy4.setHorizontalStretch(0)
+        sizePolicy4.setVerticalStretch(0)
+        sizePolicy4.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
+        self.tabWidget.setSizePolicy(sizePolicy4)
         self.tabWidget.setMinimumSize(QSize(0, 280))
         self.tabWidget.setMaximumSize(QSize(435, 16777215))
         self.tabWidget.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
@@ -423,8 +475,8 @@ class Ui_Widget(object):
         self.tracker_stop_button = QPushButton(self.tracking_group_box)
         self.tracker_stop_button.setObjectName(u"tracker_stop_button")
         self.tracker_stop_button.setEnabled(False)
-        sizePolicy2.setHeightForWidth(self.tracker_stop_button.sizePolicy().hasHeightForWidth())
-        self.tracker_stop_button.setSizePolicy(sizePolicy2)
+        sizePolicy3.setHeightForWidth(self.tracker_stop_button.sizePolicy().hasHeightForWidth())
+        self.tracker_stop_button.setSizePolicy(sizePolicy3)
         self.tracker_stop_button.setMaximumSize(QSize(16777215, 30))
         font4 = QFont()
         font4.setPointSize(12)
@@ -449,32 +501,32 @@ class Ui_Widget(object):
         self.horizontalLayout_7 = QHBoxLayout(self.params_group_box)
         self.horizontalLayout_7.setSpacing(0)
         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
-        self.groupBox_5 = QGroupBox(self.params_group_box)
-        self.groupBox_5.setObjectName(u"groupBox_5")
-        self.verticalLayout_13 = QVBoxLayout(self.groupBox_5)
+        self.stream_quality_group_box = QGroupBox(self.params_group_box)
+        self.stream_quality_group_box.setObjectName(u"stream_quality_group_box")
+        self.verticalLayout_13 = QVBoxLayout(self.stream_quality_group_box)
         self.verticalLayout_13.setObjectName(u"verticalLayout_13")
-        self.label_2 = QLabel(self.groupBox_5)
+        self.label_2 = QLabel(self.stream_quality_group_box)
         self.label_2.setObjectName(u"label_2")
         self.label_2.setMaximumSize(QSize(16777215, 15))
         self.label_2.setFont(font1)
 
         self.verticalLayout_13.addWidget(self.label_2)
 
-        self.stream_size_combo_box = QComboBox(self.groupBox_5)
+        self.stream_size_combo_box = QComboBox(self.stream_quality_group_box)
         self.stream_size_combo_box.setObjectName(u"stream_size_combo_box")
         self.stream_size_combo_box.setFont(font)
         self.stream_size_combo_box.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         self.verticalLayout_13.addWidget(self.stream_size_combo_box)
 
-        self.label_3 = QLabel(self.groupBox_5)
+        self.label_3 = QLabel(self.stream_quality_group_box)
         self.label_3.setObjectName(u"label_3")
         self.label_3.setMaximumSize(QSize(16777215, 15))
         self.label_3.setFont(font1)
 
         self.verticalLayout_13.addWidget(self.label_3)
 
-        self.bitrate_line_edit = QLineEdit(self.groupBox_5)
+        self.bitrate_line_edit = QLineEdit(self.stream_quality_group_box)
         self.bitrate_line_edit.setObjectName(u"bitrate_line_edit")
         self.bitrate_line_edit.setFont(font)
         self.bitrate_line_edit.setMaxLength(4)
@@ -483,7 +535,7 @@ class Ui_Widget(object):
         self.verticalLayout_13.addWidget(self.bitrate_line_edit)
 
 
-        self.horizontalLayout_7.addWidget(self.groupBox_5)
+        self.horizontalLayout_7.addWidget(self.stream_quality_group_box)
 
         self.horizontalSpacer_3 = QSpacerItem(10, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
 
@@ -510,9 +562,34 @@ class Ui_Widget(object):
 
         self.verticalLayout_10.addWidget(self.stream_fps_line_edit)
 
-        self.verticalSpacer_3 = QSpacerItem(20, 130, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        self.verticalSpacer_3 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
         self.verticalLayout_10.addItem(self.verticalSpacer_3)
+
+        self.groupBox_8 = QGroupBox(self.groupBox_6)
+        self.groupBox_8.setObjectName(u"groupBox_8")
+        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        sizePolicy5.setHorizontalStretch(0)
+        sizePolicy5.setVerticalStretch(0)
+        sizePolicy5.setHeightForWidth(self.groupBox_8.sizePolicy().hasHeightForWidth())
+        self.groupBox_8.setSizePolicy(sizePolicy5)
+        self.verticalLayout_15 = QVBoxLayout(self.groupBox_8)
+        self.verticalLayout_15.setObjectName(u"verticalLayout_15")
+        self.stream_check_box = QCheckBox(self.groupBox_8)
+        self.stream_check_box.setObjectName(u"stream_check_box")
+        self.stream_check_box.setChecked(True)
+        self.stream_check_box.setAutoExclusive(True)
+
+        self.verticalLayout_15.addWidget(self.stream_check_box)
+
+        self.transmitter_check_box = QCheckBox(self.groupBox_8)
+        self.transmitter_check_box.setObjectName(u"transmitter_check_box")
+        self.transmitter_check_box.setAutoExclusive(True)
+
+        self.verticalLayout_15.addWidget(self.transmitter_check_box)
+
+
+        self.verticalLayout_10.addWidget(self.groupBox_8)
 
 
         self.horizontalLayout_7.addWidget(self.groupBox_6)
@@ -528,8 +605,8 @@ class Ui_Widget(object):
         self.cfs_group_box = QGroupBox(self.tab_2)
         self.cfs_group_box.setObjectName(u"cfs_group_box")
         self.cfs_group_box.setEnabled(False)
-        sizePolicy1.setHeightForWidth(self.cfs_group_box.sizePolicy().hasHeightForWidth())
-        self.cfs_group_box.setSizePolicy(sizePolicy1)
+        sizePolicy2.setHeightForWidth(self.cfs_group_box.sizePolicy().hasHeightForWidth())
+        self.cfs_group_box.setSizePolicy(sizePolicy2)
         self.cfs_group_box.setMaximumSize(QSize(400, 16777215))
         self.cfs_group_box.setTitle(u"")
         self.cfs_group_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -626,7 +703,16 @@ class Ui_Widget(object):
         Widget.setWindowTitle(QCoreApplication.translate("Widget", u"Stream Receiver", None))
         self.groupBox_3.setTitle(QCoreApplication.translate("Widget", u"\u0414\u0430\u043d\u043d\u044b\u0435 \u043e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u043d\u0438\u044f", None))
         self.view_label.setText("")
+        self.groupBox_7.setTitle(QCoreApplication.translate("Widget", u"\u0418\u0437\u043e\u0431\u0440\u0430\u0436\u0435\u043d\u0438\u0435 \u043e\u0431\u043b\u0430\u0441\u0442\u0438 \u0438\u043d\u0442\u0435\u0440\u0435\u0441\u0430", None))
         self.roi_label.setText("")
+        self.roi_brightness_label.setText(QCoreApplication.translate("Widget", u"\u042f\u0440\u043a\u043e\u0441\u0442\u044c: 100%", None))
+#if QT_CONFIG(tooltip)
+        self.roi_frame_brightness_slider.setToolTip("")
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(statustip)
+        self.roi_frame_brightness_slider.setStatusTip("")
+#endif // QT_CONFIG(statustip)
+        self.roi_contrast_label.setText(QCoreApplication.translate("Widget", u"\u041a\u043e\u043d\u0442\u0440\u0430\u0441\u0442\u043d\u043e\u0441\u0442\u044c: 100%", None))
         self.connection_label.setText(QCoreApplication.translate("Widget", u"\u041d\u0435\u0442 \u0441\u043e\u0435\u0434\u0438\u043d\u0435\u043d\u0438\u044f \u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u043e\u043c", None))
         self.groupBox_2.setTitle("")
         self.controlsBox.setTitle(QCoreApplication.translate("Widget", u"\u0423\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435", None))
@@ -659,7 +745,7 @@ class Ui_Widget(object):
         self.tracker_stop_button.setText(QCoreApplication.translate("Widget", u"\u041e\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c \u043e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u043d\u0438\u0435", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QCoreApplication.translate("Widget", u"\u041e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u043d\u0438\u0435", None))
         self.params_group_box.setTitle("")
-        self.groupBox_5.setTitle(QCoreApplication.translate("Widget", u"\u041a\u0430\u0447\u0435\u0441\u0442\u0432\u043e \u043f\u043e\u0442\u043e\u043a\u0430", None))
+        self.stream_quality_group_box.setTitle(QCoreApplication.translate("Widget", u"\u041a\u0430\u0447\u0435\u0441\u0442\u0432\u043e \u0442\u0440\u0430\u043d\u0441\u043b\u044f\u0446\u0438\u0438", None))
         self.label_2.setText(QCoreApplication.translate("Widget", u"\u0420\u0430\u0437\u0440\u0435\u0448\u0435\u043d\u0438\u0435 \u043f\u043e\u0442\u043e\u043a\u0430", None))
         self.label_3.setText(QCoreApplication.translate("Widget", u"\u0411\u0438\u0442\u0440\u0435\u0439\u0442 (\u043a\u0431\u0438\u0442/\u0441)", None))
         self.bitrate_line_edit.setText(QCoreApplication.translate("Widget", u"2000", None))
@@ -667,6 +753,9 @@ class Ui_Widget(object):
         self.groupBox_6.setTitle(QCoreApplication.translate("Widget", u"\u041f\u0440\u043e\u0447\u0435\u0435", None))
         self.label_10.setText(QCoreApplication.translate("Widget", u"FPS", None))
         self.stream_fps_line_edit.setText(QCoreApplication.translate("Widget", u"30", None))
+        self.groupBox_8.setTitle(QCoreApplication.translate("Widget", u"\u041f\u043e\u043a\u0430\u0437 \u0438\u0437\u043e\u0431\u0440\u0430\u0436\u0435\u043d\u0438\u044f", None))
+        self.stream_check_box.setText(QCoreApplication.translate("Widget", u"\u0422\u0440\u0430\u043d\u0441\u043b\u044f\u0446\u0438\u044f", None))
+        self.transmitter_check_box.setText(QCoreApplication.translate("Widget", u"\u041f\u0435\u0440\u0435\u0434\u0430\u0442\u0447\u0438\u043a", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_5), QCoreApplication.translate("Widget", u"\u041f\u0430\u0440\u0430\u043c\u0435\u0442\u0440\u044b", None))
         self.line_edit_c1.setPlaceholderText(QCoreApplication.translate("Widget", u"C1", None))
         self.line_edit_c2.setPlaceholderText(QCoreApplication.translate("Widget", u"C2", None))
