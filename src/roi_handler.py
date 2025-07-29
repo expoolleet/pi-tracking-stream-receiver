@@ -62,6 +62,9 @@ class ROIHandler(QObject):
         self.interpolation_step = interpolation_step
         self.interpolation_sleep_time = 0.001
 
+        self._x_offset = 5
+
+
     def enable_roi_selecting(self) -> None:
         self.enabled = True
 
@@ -112,7 +115,7 @@ class ROIHandler(QObject):
         roi_height = abs(y2 - y1)
 
         roi = [
-            int(min(x1, x2)),
+            int(min(x1, x2)) - self._x_offset,
             int(min(y1, y2)),
             int(roi_width),
             int(roi_height),
@@ -127,19 +130,20 @@ class ROIHandler(QObject):
             self.change_state(ROIState.FAILED)
         else:
             self.change_state(ROIState.TRACKING)
-            if roi == self.get_roi():
-                return
-            else:
-                width_offset = self.stream_size[0] / self.tracking_frame_size[0]
-                height_offset = self.stream_size[1] / self.tracking_frame_size[1]
-                new_roi = [int(roi[0] * width_offset), int(roi[1] * height_offset),
-                           int(roi[2] * width_offset), int(roi[3] * height_offset)]
-            if self._smooth_update_thread is None or not self._smooth_update_thread.is_alive():
-                self._stop_smooth_event.clear()
-                self._smooth_update_thread = threading.Thread(target=self.smooth_update_roi, args=(new_roi,), daemon=True)
-                self._smooth_update_thread.start()
-            else:
-                self._stop_smooth_event.set()
+            # if roi == self.get_roi():
+            #     return
+            # else:
+            width_offset = self.stream_size[0] / self.tracking_frame_size[0]
+            height_offset = self.stream_size[1] / self.tracking_frame_size[1]
+            new_roi = [int(roi[0] * width_offset) + self._x_offset, int(roi[1] * height_offset),
+                       int(roi[2] * width_offset), int(roi[3] * height_offset)]
+            self.set_roi(new_roi)
+            # if self._smooth_update_thread is None or not self._smooth_update_thread.is_alive():
+            #     self._stop_smooth_event.clear()
+            #     self._smooth_update_thread = threading.Thread(target=self.smooth_update_roi, args=(new_roi,), daemon=True)
+            #     self._smooth_update_thread.start()
+            # else:
+            #     self._stop_smooth_event.set()
 
 
     def smooth_update_roi(self, new_roi) -> None:
@@ -307,6 +311,7 @@ class ROIHandler(QObject):
                 roi = self.get_roi()
                 x = roi[0] + roi[2] // 2 - width // 2
                 y = roi[1] + roi[3] // 2 - height // 2
+
             roi = [x, y, width, height]
 
             self.set_roi(roi)
@@ -362,7 +367,7 @@ class ROIHandler(QObject):
         return frame
 
 
-    def draw_roi_on_frame(self, func) -> None:
+    def draw_roi_wrapper(self, func) -> None:
         def wrapper(*args, **kwargs):
             args = list(args)
             args[0] = self.draw_roi(args[0])

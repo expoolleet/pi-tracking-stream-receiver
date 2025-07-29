@@ -42,6 +42,7 @@ class Viewer(QWidget):
         self.stream_receiver = stream_receiver
         self.is_playing = False
         self.stream_url = None
+        self.tracking_frame_size = (0, 0)
 
         self.debug = DebugEmitter()
 
@@ -120,7 +121,17 @@ class Viewer(QWidget):
         Updates the view from the system camera
         :return None:
         """
-        self.update_frame(lambda: cv2.cvtColor(self.system_camera.read()[1], cv2.COLOR_BGR2RGB) if self.system_camera.read()[0] else BLACK_FRAME)
+        self.update_frame(
+            lambda: cv2.resize(
+                cv2.cvtColor(self.system_camera.read()[1], cv2.COLOR_BGR2RGB),
+                self.tracking_frame_size,
+                cv2.INTER_LINEAR)
+            if self.system_camera.read()[0]
+            else BLACK_FRAME)
+
+
+    def set_tracking_frame_size(self, size):
+        self.tracking_frame_size = size
 
 
     def change_stream_url(self, stream_params) -> None:

@@ -32,6 +32,7 @@ class SocketHandler(QObject):
         self.receive_thread = threading.Thread(target=self.receive, daemon=True)
         self.receive_thread.start()
         self.debug = DebugEmitter()
+        self._socket_lock = threading.Lock()
 
 
     @staticmethod
@@ -45,7 +46,7 @@ class SocketHandler(QObject):
             "command": command,
             "data": data
         }
-        raw_data = json.dumps(packet).encode('utf-8')
+        raw_data = json.dumps(packet).encode('utf-8') + b'\n'
         return raw_data
 
 
@@ -121,15 +122,16 @@ class SocketHandler(QObject):
 
 
     def send(self, command: str, data: dict = {}) -> None:
-        try:
-            if self.is_connected:
-                encoded_data = self.encode_data(command, data)
-                self.debug.send(f"socket sent: {command}; {encoded_data}")
-                self.socket.send(encoded_data)
-            else:
-                self.debug.send(f"No socket connection to the server has been set, command '{command}' was not sent")
-        except (socket.error, BrokenPipeError) as e:
-            self.debug.send(f"Socket error: {e}")
+        with self._socket_lock:
+            try:
+                if self.is_connected:
+                    encoded_data = self.encode_data(command, data)
+                    self.debug.send(f"socket sent: {command}; {encoded_data}")
+                    self.socket.send(encoded_data)
+                else:
+                    self.debug.send(f"No socket connection to the server has been set, command '{command}' was not sent")
+            except (socket.error, BrokenPipeError) as e:
+                self.debug.send(f"Socket error: {e}")
 
 
     def reconnect(self, ip, port) -> bool:

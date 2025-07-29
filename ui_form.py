@@ -133,6 +133,7 @@ class Ui_Widget(object):
         self.roi_frame_brightness_slider = QSlider(self.groupBox_7)
         self.roi_frame_brightness_slider.setObjectName(u"roi_frame_brightness_slider")
         self.roi_frame_brightness_slider.setMaximumSize(QSize(16777215, 15))
+        self.roi_frame_brightness_slider.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.roi_frame_brightness_slider.setMinimum(-100)
         self.roi_frame_brightness_slider.setMaximum(100)
         self.roi_frame_brightness_slider.setSingleStep(1)
@@ -149,6 +150,7 @@ class Ui_Widget(object):
         self.roi_frame_contrast_slider = QSlider(self.groupBox_7)
         self.roi_frame_contrast_slider.setObjectName(u"roi_frame_contrast_slider")
         self.roi_frame_contrast_slider.setMaximumSize(QSize(16777215, 15))
+        self.roi_frame_contrast_slider.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.roi_frame_contrast_slider.setMinimum(0)
         self.roi_frame_contrast_slider.setMaximum(100)
         self.roi_frame_contrast_slider.setPageStep(50)
@@ -253,7 +255,10 @@ class Ui_Widget(object):
         self.tabWidget.setSizePolicy(sizePolicy4)
         self.tabWidget.setMinimumSize(QSize(0, 280))
         self.tabWidget.setMaximumSize(QSize(435, 16777215))
+        self.tabWidget.setFont(font1)
         self.tabWidget.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
+        self.tabWidget.setTabPosition(QTabWidget.TabPosition.North)
+        self.tabWidget.setTabShape(QTabWidget.TabShape.Rounded)
         self.tabWidget.setDocumentMode(True)
         self.tabWidget.setTabsClosable(False)
         self.tabWidget.setMovable(False)
@@ -472,20 +477,23 @@ class Ui_Widget(object):
 
         self.verticalLayout_5.addLayout(self.horizontalLayout_2)
 
+        self.horizontalLayout_9 = QHBoxLayout()
+        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
         self.tracker_stop_button = QPushButton(self.tracking_group_box)
         self.tracker_stop_button.setObjectName(u"tracker_stop_button")
         self.tracker_stop_button.setEnabled(False)
         sizePolicy3.setHeightForWidth(self.tracker_stop_button.sizePolicy().hasHeightForWidth())
         self.tracker_stop_button.setSizePolicy(sizePolicy3)
         self.tracker_stop_button.setMaximumSize(QSize(16777215, 30))
-        font4 = QFont()
-        font4.setPointSize(12)
-        self.tracker_stop_button.setFont(font4)
+        self.tracker_stop_button.setFont(font)
         self.tracker_stop_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.tracker_stop_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.tracker_stop_button.setFlat(False)
 
-        self.verticalLayout_5.addWidget(self.tracker_stop_button)
+        self.horizontalLayout_9.addWidget(self.tracker_stop_button)
+
+
+        self.verticalLayout_5.addLayout(self.horizontalLayout_9)
 
 
         self.horizontalLayout_3.addWidget(self.tracking_group_box)
@@ -577,6 +585,7 @@ class Ui_Widget(object):
         self.verticalLayout_15.setObjectName(u"verticalLayout_15")
         self.stream_check_box = QCheckBox(self.groupBox_8)
         self.stream_check_box.setObjectName(u"stream_check_box")
+        self.stream_check_box.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.stream_check_box.setChecked(True)
         self.stream_check_box.setAutoExclusive(True)
 
@@ -584,6 +593,7 @@ class Ui_Widget(object):
 
         self.transmitter_check_box = QCheckBox(self.groupBox_8)
         self.transmitter_check_box.setObjectName(u"transmitter_check_box")
+        self.transmitter_check_box.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.transmitter_check_box.setAutoExclusive(True)
 
         self.verticalLayout_15.addWidget(self.transmitter_check_box)
@@ -598,6 +608,49 @@ class Ui_Widget(object):
         self.verticalLayout_9.addWidget(self.params_group_box)
 
         self.tabWidget.addTab(self.tab_5, "")
+        self.tab_3 = QWidget()
+        self.tab_3.setObjectName(u"tab_3")
+        self.groupBox_5 = QGroupBox(self.tab_3)
+        self.groupBox_5.setObjectName(u"groupBox_5")
+        self.groupBox_5.setGeometry(QRect(9, 9, 271, 171))
+        self.verticalLayout_16 = QVBoxLayout(self.groupBox_5)
+        self.verticalLayout_16.setObjectName(u"verticalLayout_16")
+        self.toggle_roi_radio_button = QRadioButton(self.groupBox_5)
+        self.toggle_roi_radio_button.setObjectName(u"toggle_roi_radio_button")
+        self.toggle_roi_radio_button.setFont(font1)
+        self.toggle_roi_radio_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.toggle_roi_radio_button.setCheckable(True)
+        self.toggle_roi_radio_button.setChecked(True)
+        self.toggle_roi_radio_button.setAutoExclusive(False)
+
+        self.verticalLayout_16.addWidget(self.toggle_roi_radio_button)
+
+        self.toggle_server_roi_radio_button = QRadioButton(self.groupBox_5)
+        self.toggle_server_roi_radio_button.setObjectName(u"toggle_server_roi_radio_button")
+        self.toggle_server_roi_radio_button.setFont(font1)
+        self.toggle_server_roi_radio_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.toggle_server_roi_radio_button.setAutoExclusive(False)
+
+        self.verticalLayout_16.addWidget(self.toggle_server_roi_radio_button)
+
+        self.toggle_crosshair_radio_button = QRadioButton(self.groupBox_5)
+        self.toggle_crosshair_radio_button.setObjectName(u"toggle_crosshair_radio_button")
+        self.toggle_crosshair_radio_button.setFont(font1)
+        self.toggle_crosshair_radio_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.toggle_crosshair_radio_button.setCheckable(True)
+        self.toggle_crosshair_radio_button.setChecked(True)
+        self.toggle_crosshair_radio_button.setAutoExclusive(False)
+
+        self.verticalLayout_16.addWidget(self.toggle_crosshair_radio_button)
+
+        self.toggle_server_crosshair_radio_button = QRadioButton(self.groupBox_5)
+        self.toggle_server_crosshair_radio_button.setObjectName(u"toggle_server_crosshair_radio_button")
+        self.toggle_server_crosshair_radio_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.toggle_server_crosshair_radio_button.setAutoExclusive(False)
+
+        self.verticalLayout_16.addWidget(self.toggle_server_crosshair_radio_button)
+
+        self.tabWidget.addTab(self.tab_3, "")
         self.tab_2 = QWidget()
         self.tab_2.setObjectName(u"tab_2")
         self.verticalLayout_8 = QVBoxLayout(self.tab_2)
@@ -677,6 +730,8 @@ class Ui_Widget(object):
         self.debug_plain_text_edit = QPlainTextEdit(self.groupBox)
         self.debug_plain_text_edit.setObjectName(u"debug_plain_text_edit")
         self.debug_plain_text_edit.setMaximumSize(QSize(16777215, 16777215))
+        font4 = QFont()
+        font4.setPointSize(12)
         self.debug_plain_text_edit.setFont(font4)
         self.debug_plain_text_edit.viewport().setProperty(u"cursor", QCursor(Qt.CursorShape.IBeamCursor))
         self.debug_plain_text_edit.setReadOnly(True)
@@ -757,6 +812,12 @@ class Ui_Widget(object):
         self.stream_check_box.setText(QCoreApplication.translate("Widget", u"\u0422\u0440\u0430\u043d\u0441\u043b\u044f\u0446\u0438\u044f", None))
         self.transmitter_check_box.setText(QCoreApplication.translate("Widget", u"\u041f\u0435\u0440\u0435\u0434\u0430\u0442\u0447\u0438\u043a", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_5), QCoreApplication.translate("Widget", u"\u041f\u0430\u0440\u0430\u043c\u0435\u0442\u0440\u044b", None))
+        self.groupBox_5.setTitle("")
+        self.toggle_roi_radio_button.setText(QCoreApplication.translate("Widget", u"\u041f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0442\u044c \u0440\u0430\u043c\u043a\u0443 ROI (\u043a\u043b\u0438\u0435\u043d\u0442)", None))
+        self.toggle_server_roi_radio_button.setText(QCoreApplication.translate("Widget", u"\u041f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0442\u044c \u0440\u0430\u043c\u043a\u0443 ROI (\u0441\u0435\u0440\u0432\u0435\u0440)", None))
+        self.toggle_crosshair_radio_button.setText(QCoreApplication.translate("Widget", u"\u041f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0442\u044c \u043f\u0440\u0438\u0446\u0435\u043b (\u0446\u0435\u043d\u0442\u0440) (\u043a\u043b\u0438\u0435\u043d\u0442) ", None))
+        self.toggle_server_crosshair_radio_button.setText(QCoreApplication.translate("Widget", u"\u041f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0442\u044c \u043f\u0440\u0438\u0446\u0435\u043b (\u0446\u0435\u043d\u0442\u0440) (\u0441\u0435\u0440\u0432\u0435\u0440)", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), QCoreApplication.translate("Widget", u"\u041e\u0442\u043e\u0431\u0440\u0430\u0436\u0435\u043d\u0438\u0435", None))
         self.line_edit_c1.setPlaceholderText(QCoreApplication.translate("Widget", u"C1", None))
         self.line_edit_c2.setPlaceholderText(QCoreApplication.translate("Widget", u"C2", None))
         self.line_edit_c3.setPlaceholderText(QCoreApplication.translate("Widget", u"C3", None))

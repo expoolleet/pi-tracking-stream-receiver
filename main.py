@@ -18,6 +18,7 @@ from src.tools import numpy_to_pixmap, scale_pixmap, DebugEmitter
 from src.command import Command
 from src.zeroconf_handler import ZeroconfHandler
 from src.widgets_text import *
+from src.pipeline import WrapperPipeline
 from src.data import Data
 
 import cv2
@@ -82,7 +83,26 @@ class Widget(QWidget):
         self.stream_size_changed_signal.connect(self.roi_handler.set_stream_size)
         self.toggle_view_signal.connect(lambda: self.roi_handler.set_interpolation_step(1/int(self.ui.stream_fps_line_edit.text())))
 
-        self.update_view_label = self.add_crosshair(self.roi_handler.draw_roi_on_frame(self.update_view_label))  # wrapper
+        self.view_label_pipeline = WrapperPipeline()
+        self.view_label_pipeline.register_operation(self.draw_crosshair, self.draw_crosshair.__name__)
+        self.view_label_pipeline.register_operation(self.roi_handler.draw_roi, self.roi_handler.draw_roi.__name__)
+        self.view_label_pipeline.register_operation(self.update_view_label, self.update_view_label.__name__)
+
+        self.update_view_label = self.view_label_pipeline.process
+
+        self.ui.toggle_crosshair_radio_button.toggled.connect(
+            lambda enabled: self.view_label_pipeline.enable_operation(self.draw_crosshair.__name__) if enabled
+            else self.view_label_pipeline.disable_operation(self.draw_crosshair.__name__))
+        self.ui.toggle_roi_radio_button.toggled.connect(
+            lambda enabled: self.view_label_pipeline.enable_operation(self.roi_handler.draw_roi.__name__) if enabled
+            else self.view_label_pipeline.disable_operation(self.roi_handler.draw_roi.__name__))
+
+        self.ui.toggle_server_roi_radio_button.toggled.connect(
+            lambda enabled: self.socket_handler.send(Command.TOGGLE_ROI, True) if enabled
+            else self.socket_handler.send(Command.TOGGLE_ROI, False))
+        self.ui.toggle_server_crosshair_radio_button.toggled.connect(
+            lambda enabled: self.socket_handler.send(Command.TOGGLE_CROSSHAIR, True) if enabled
+            else self.socket_handler.send(Command.TOGGLE_CROSSHAIR, False))
 
         self.view_label_event_filter = MouseEventFilter(
             self.roi_handler.on_left_click_handle_roi,
@@ -139,6 +159,7 @@ class Widget(QWidget):
         self.ui.stream_check_box.stateChanged.connect(lambda state: self.handle_image_checkbox(self.ui.stream_check_box, state))
         self.ui.transmitter_check_box.stateChanged.connect(lambda state: self.handle_image_checkbox(self.ui.transmitter_check_box, state))
 
+
         self.is_tracking_stopped = False
 
         self.save_thread = None
@@ -154,7 +175,7 @@ class Widget(QWidget):
         if check_box == self.ui.transmitter_check_box:
             if state == Qt.CheckState.Checked.value:
                 self.ui.stream_quality_group_box.setEnabled(False)
-                self.stream_receiver.change_stream_size_with_index(StreamSize.SIZE_480[0])
+                self.stream_receiver.change_stream_size_with_index(StreamSize.SIZE_360[0])
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         if self.roi_handler.current_state != ROIState.FAST_SELECTING:
@@ -180,8 +201,11 @@ class Widget(QWidget):
         self.ui.cancel_connection_button.setEnabled(False)
         self.socket_handler.connect(params["server_ip"], params["server_port"])
         self.roi_handler.set_tracking_frame_size(params["tracking_frame_size"])
+        self.viewer.set_tracking_frame_size(params["tracking_frame_size"])
         if self.ui.fast_roi_radio_button.isChecked():
             self.roi_handler.change_state(ROIState.FAST_SELECTING)
+        self.socket_handler.send(Command.TOGGLE_ROI, self.ui.toggle_server_roi_radio_button.isChecked())
+        self.socket_handler.send(Command.TOGGLE_CROSSHAIR, self.ui.toggle_server_crosshair_radio_button.isChecked())
         self.toggle_view_signal.emit()
 
 
@@ -286,19 +310,22 @@ class Widget(QWidget):
         self.ui.view_label.setPixmap(scaled_pixmap)
 
 
-    def add_crosshair(self, func):
+    def draw_crosshair(self, frame: np.ndarray)-> np.ndarray:
+        stream_size = self.stream_receiver.get_stream_size()
+        center_x = stream_size[0] // 2
+        center_y = stream_size[1] // 2
+        length = 8
+        thickness = 2
+        cv2.line(frame, (center_x, center_y - length), (center_x, center_y + length), (0, 0, 255), thickness)
+        cv2.line(frame, (center_x - length, center_y), (center_x + length, center_y), (0, 0, 255), thickness)
+        return frame
+
+
+    def draw_crosshair_wrapper(self, func):
         def wrapper(*args, **kwargs):
             args = list(args)
             if isinstance(args[0], np.ndarray):
-                frame = args[0].copy()
-                stream_size = self.stream_receiver.get_stream_size()
-                center_x = stream_size[0] // 2
-                center_y = stream_size[1] // 2
-                length = 8
-                thickness = 2
-                cv2.line(frame, (center_x, center_y - length), (center_x, center_y + length), (0, 0, 255), thickness)
-                cv2.line(frame, (center_x - length, center_y), (center_x + length, center_y), (0, 0, 255), thickness)
-                args[0] = frame
+                args[0] = self.draw_crosshair(args[0])
             return func(*args, **kwargs)
         return wrapper
 
@@ -392,6 +419,10 @@ class Widget(QWidget):
         self.ui.roi_height_slider.setValue(saved_data["fast_roi_height"])
         self.ui.roi_width_line_edit.setText(str(saved_data["fast_roi_width"]))
         self.ui.roi_height_line_edit.setText(str(saved_data["fast_roi_height"]))
+        self.ui.toggle_roi_radio_button.setChecked(saved_data["toggle_roi"])
+        self.ui.toggle_crosshair_radio_button.setChecked(saved_data["toggle_crosshair"])
+        self.ui.toggle_server_roi_radio_button.setChecked(saved_data["server_toggle_roi"])
+        self.ui.toggle_server_crosshair_radio_button.setChecked(saved_data["server_toggle_crosshair"])
 
         if "skip_frames" in saved_data:
             self.ui.skip_frame_line_edit.setText(str(saved_data["skip_frames"]))
@@ -432,7 +463,11 @@ class Widget(QWidget):
             "fast_roi_height": self.ui.roi_height_slider.value(),
             "fast_roi_width": self.ui.roi_width_slider.value(),
             "roi_frame_brightness": self.ui.roi_frame_brightness_slider.value(),
-            "roi_frame_contrast": self.ui.roi_frame_contrast_slider.value()
+            "roi_frame_contrast": self.ui.roi_frame_contrast_slider.value(),
+            "toggle_roi": self.ui.toggle_roi_radio_button.isChecked(),
+            "toggle_crosshair": self.ui.toggle_crosshair_radio_button.isChecked(),
+            "server_toggle_roi": self.ui.toggle_server_roi_radio_button.isChecked(),
+            "server_toggle_crosshair": self.ui.toggle_server_crosshair_radio_button.isChecked()
         }
 
         for image_cb in self.image_checkboxes:

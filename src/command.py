@@ -12,3 +12,7 @@
     REQUEST_TRACKING = "request_tracking"
     START_TRANSMISSION = "start_transmission"
     STOP_TRANSMISSION = "stop_transmission"
+
+    ## Server UI Commands
+    TOGGLE_ROI = "toggle_roi"
+    TOGGLE_CROSSHAIR = "toggle_crosshair"
