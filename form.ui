@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1129</width>
-    <height>804</height>
+    <height>800</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -775,7 +775,7 @@
                   </size>
                  </property>
                  <property name="title">
-                  <string>Модель Калмана</string>
+                  <string>Калман</string>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -866,7 +866,10 @@
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_6">
                   <property name="topMargin">
-                   <number>15</number>
+                   <number>2</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>2</number>
                   </property>
                   <item>
                    <widget class="QRadioButton" name="fast_roi_radio_button">
@@ -883,6 +886,19 @@
                     </property>
                     <property name="checked">
                      <bool>true</bool>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>false</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QRadioButton" name="optimal_fast_roi_step_radio_button">
+                    <property name="text">
+                     <string>Оптимальный шаг</string>
+                    </property>
+                    <property name="autoExclusive">
+                     <bool>false</bool>
                     </property>
                    </widget>
                   </item>

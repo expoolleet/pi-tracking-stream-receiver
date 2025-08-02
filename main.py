@@ -159,6 +159,7 @@ class Widget(QWidget):
         self.ui.stream_check_box.stateChanged.connect(lambda state: self.handle_image_checkbox(self.ui.stream_check_box, state))
         self.ui.transmitter_check_box.stateChanged.connect(lambda state: self.handle_image_checkbox(self.ui.transmitter_check_box, state))
 
+        self.ui.optimal_fast_roi_step_radio_button.toggled.connect(self.enable_fast_roi_parameters)
 
         self.is_tracking_stopped = False
 
@@ -177,11 +178,15 @@ class Widget(QWidget):
                 self.ui.stream_quality_group_box.setEnabled(False)
                 self.stream_receiver.change_stream_size_with_index(StreamSize.SIZE_360[0])
 
+
     def wheelEvent(self, event: QWheelEvent) -> None:
         if self.roi_handler.current_state != ROIState.FAST_SELECTING:
             return
         direction = np.sign(event.angleDelta().y())
         new_size = (self.roi_handler.roi[2] + self.roi_handler.roi[3]) // 2 + direction
+
+        if self.ui.optimal_fast_roi_step_radio_button.isChecked():
+            new_size = self.roi_handler.get_optimal_roi_size(new_size, direction)
         self.handle_roi_width(new_size)
         self.handle_roi_height(new_size)
 
@@ -243,6 +248,14 @@ class Widget(QWidget):
         self.ui.roi_height_slider.setValue(height)
         if self.ui.fast_roi_radio_button.isChecked():
             self.roi_handler.handle_fast_roi(True, self.ui.roi_width_slider.value(), height)
+
+
+    def enable_fast_roi_parameters(self, enabled):
+        self.ui.roi_width_line_edit.setEnabled(not enabled)
+        self.ui.roi_width_slider.setEnabled(not enabled)
+        self.ui.roi_height_line_edit.setEnabled(not enabled)
+        self.ui.roi_height_slider.setEnabled(not enabled)
+
 
 
     def handle_roi_label_brightness(self, value):
@@ -316,6 +329,7 @@ class Widget(QWidget):
         center_y = stream_size[1] // 2
         length = 8
         thickness = 2
+        frame = frame.copy()
         cv2.line(frame, (center_x, center_y - length), (center_x, center_y + length), (0, 0, 255), thickness)
         cv2.line(frame, (center_x - length, center_y), (center_x + length, center_y), (0, 0, 255), thickness)
         return frame
@@ -423,6 +437,7 @@ class Widget(QWidget):
         self.ui.toggle_crosshair_radio_button.setChecked(saved_data["toggle_crosshair"])
         self.ui.toggle_server_roi_radio_button.setChecked(saved_data["server_toggle_roi"])
         self.ui.toggle_server_crosshair_radio_button.setChecked(saved_data["server_toggle_crosshair"])
+        self.ui.optimal_fast_roi_step_radio_button.setChecked(saved_data["optimal_fast_roi_step"])
 
         if "skip_frames" in saved_data:
             self.ui.skip_frame_line_edit.setText(str(saved_data["skip_frames"]))
@@ -467,7 +482,8 @@ class Widget(QWidget):
             "toggle_roi": self.ui.toggle_roi_radio_button.isChecked(),
             "toggle_crosshair": self.ui.toggle_crosshair_radio_button.isChecked(),
             "server_toggle_roi": self.ui.toggle_server_roi_radio_button.isChecked(),
-            "server_toggle_crosshair": self.ui.toggle_server_crosshair_radio_button.isChecked()
+            "server_toggle_crosshair": self.ui.toggle_server_crosshair_radio_button.isChecked(),
+            "optimal_fast_roi_step": self.ui.optimal_fast_roi_step_radio_button.isChecked()
         }
 
         for image_cb in self.image_checkboxes:

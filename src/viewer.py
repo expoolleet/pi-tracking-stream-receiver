@@ -24,7 +24,7 @@ else:
 NO_CONNECTION_IMAGE = base_path / "img" / "no_connection.png"
 CONNECTION_ESTABLISHED_IMAGE = base_path / "img" / "connection_established.png"
 
-BLACK_FRAME = np.zeros((1, 1, 3), dtype=np.uint8)
+BLACK_FRAME = np.zeros((360, 448, 3), dtype=np.uint8)
 
 class Viewer(QWidget):
 
@@ -51,7 +51,13 @@ class Viewer(QWidget):
         self.frame_rate = frame_rate
         self.frame_time = 1.0 / frame_rate
 
-        self.system_camera = cv2.VideoCapture(0)
+        try:
+            self.system_camera = cv2.VideoCapture(0)
+            if self.system_camera.isOpened() and self.system_camera.get(cv2.CAP_PROP_FPS) < 1:
+                raise Exception("System camera is not working")
+        except Exception as e:
+            self.debug.send(f"Error initializing system camera: {e}")
+            self.system_camera = None
 
         self._is_playing_lock = threading.Lock()
 
@@ -126,7 +132,7 @@ class Viewer(QWidget):
                 cv2.cvtColor(self.system_camera.read()[1], cv2.COLOR_BGR2RGB),
                 self.tracking_frame_size,
                 cv2.INTER_LINEAR)
-            if self.system_camera.read()[0]
+            if self.system_camera and self.system_camera.read()[0]
             else BLACK_FRAME)
 
 

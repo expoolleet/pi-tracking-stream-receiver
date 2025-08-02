@@ -24,6 +24,8 @@ INIT_END_POINT = [0, 0]
 INIT_ROI = [0, 0, 0, 0]
 
 
+OPTIMAL_ROI_SQUARE_SIZES = [32, 36, 40, 42, 45, 48, 49, 50, 54, 56, 60, 64, 72, 75, 80, 81, 84, 90, 96, 100, 108, 112, 120, 125, 126, 128]
+
 class ROIState(Enum):
     NONE = 0
     SELECTING = 1
@@ -63,6 +65,21 @@ class ROIHandler(QObject):
         self.interpolation_sleep_time = 0.001
 
         self._x_offset = 5
+
+    @staticmethod
+    def get_optimal_roi_size(size, index_offset) -> int:
+        min_difference = 9999
+        optimal_size_index = 0
+        for i, optimal_size in enumerate(OPTIMAL_ROI_SQUARE_SIZES):
+            difference = abs(size - optimal_size)
+            if difference < min_difference:
+                min_difference = difference
+                optimal_size_index = i
+        if optimal_size_index + index_offset < 0:
+            return OPTIMAL_ROI_SQUARE_SIZES[0]
+        elif optimal_size_index + index_offset >= len(OPTIMAL_ROI_SQUARE_SIZES):
+            return OPTIMAL_ROI_SQUARE_SIZES[-1]
+        return OPTIMAL_ROI_SQUARE_SIZES[optimal_size_index + index_offset]
 
 
     def enable_roi_selecting(self) -> None:
