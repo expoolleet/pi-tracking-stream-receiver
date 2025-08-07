@@ -25,7 +25,7 @@ class Ui_Widget(object):
     def setupUi(self, Widget):
         if not Widget.objectName():
             Widget.setObjectName(u"Widget")
-        Widget.resize(1129, 804)
+        Widget.resize(1129, 800)
         Widget.setMinimumSize(QSize(1000, 800))
         icon = QIcon()
         icon.addFile(u"icon.ico", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
@@ -617,11 +617,13 @@ class Ui_Widget(object):
         self.tabWidget.addTab(self.tab_5, "")
         self.tab_3 = QWidget()
         self.tab_3.setObjectName(u"tab_3")
+        self.horizontalLayout_12 = QHBoxLayout(self.tab_3)
+        self.horizontalLayout_12.setObjectName(u"horizontalLayout_12")
         self.groupBox_5 = QGroupBox(self.tab_3)
         self.groupBox_5.setObjectName(u"groupBox_5")
-        self.groupBox_5.setGeometry(QRect(9, 9, 271, 171))
         self.verticalLayout_16 = QVBoxLayout(self.groupBox_5)
         self.verticalLayout_16.setObjectName(u"verticalLayout_16")
+        self.verticalLayout_16.setContentsMargins(4, -1, -1, -1)
         self.toggle_roi_radio_button = QRadioButton(self.groupBox_5)
         self.toggle_roi_radio_button.setObjectName(u"toggle_roi_radio_button")
         self.toggle_roi_radio_button.setFont(font1)
@@ -656,6 +658,119 @@ class Ui_Widget(object):
         self.toggle_server_crosshair_radio_button.setAutoExclusive(False)
 
         self.verticalLayout_16.addWidget(self.toggle_server_crosshair_radio_button)
+
+
+        self.horizontalLayout_12.addWidget(self.groupBox_5)
+
+        self.groupBox_9 = QGroupBox(self.tab_3)
+        self.groupBox_9.setObjectName(u"groupBox_9")
+        self.groupBox_9.setMaximumSize(QSize(200, 16777215))
+        self.verticalLayout_21 = QVBoxLayout(self.groupBox_9)
+        self.verticalLayout_21.setObjectName(u"verticalLayout_21")
+        self.keep_frame_aspect_ratio_radio_button = QRadioButton(self.groupBox_9)
+        self.keep_frame_aspect_ratio_radio_button.setObjectName(u"keep_frame_aspect_ratio_radio_button")
+        self.keep_frame_aspect_ratio_radio_button.setFont(font3)
+        self.keep_frame_aspect_ratio_radio_button.setAcceptDrops(False)
+
+        self.verticalLayout_21.addWidget(self.keep_frame_aspect_ratio_radio_button)
+
+        self.horizontalLayout_10 = QHBoxLayout()
+        self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
+        self.verticalLayout_17 = QVBoxLayout()
+        self.verticalLayout_17.setObjectName(u"verticalLayout_17")
+        self.label_14 = QLabel(self.groupBox_9)
+        self.label_14.setObjectName(u"label_14")
+        self.label_14.setMaximumSize(QSize(16777215, 20))
+        self.label_14.setFont(font3)
+        self.label_14.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.verticalLayout_17.addWidget(self.label_14)
+
+        self.frame_upper_border_line_edit = QLineEdit(self.groupBox_9)
+        self.frame_upper_border_line_edit.setObjectName(u"frame_upper_border_line_edit")
+        self.frame_upper_border_line_edit.setFont(font3)
+        self.frame_upper_border_line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.verticalLayout_17.addWidget(self.frame_upper_border_line_edit)
+
+
+        self.horizontalLayout_10.addLayout(self.verticalLayout_17)
+
+        self.verticalLayout_18 = QVBoxLayout()
+        self.verticalLayout_18.setObjectName(u"verticalLayout_18")
+        self.label_13 = QLabel(self.groupBox_9)
+        self.label_13.setObjectName(u"label_13")
+        self.label_13.setMaximumSize(QSize(16777215, 20))
+        self.label_13.setFont(font3)
+        self.label_13.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.verticalLayout_18.addWidget(self.label_13)
+
+        self.frame_lower_border_line_edit = QLineEdit(self.groupBox_9)
+        self.frame_lower_border_line_edit.setObjectName(u"frame_lower_border_line_edit")
+        self.frame_lower_border_line_edit.setFont(font3)
+        self.frame_lower_border_line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.verticalLayout_18.addWidget(self.frame_lower_border_line_edit)
+
+
+        self.horizontalLayout_10.addLayout(self.verticalLayout_18)
+
+
+        self.verticalLayout_21.addLayout(self.horizontalLayout_10)
+
+        self.horizontalLayout_11 = QHBoxLayout()
+        self.horizontalLayout_11.setObjectName(u"horizontalLayout_11")
+        self.verticalLayout_20 = QVBoxLayout()
+        self.verticalLayout_20.setObjectName(u"verticalLayout_20")
+        self.label_11 = QLabel(self.groupBox_9)
+        self.label_11.setObjectName(u"label_11")
+        self.label_11.setMaximumSize(QSize(16777215, 20))
+        self.label_11.setFont(font3)
+        self.label_11.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.verticalLayout_20.addWidget(self.label_11)
+
+        self.frame_right_border_line_edit = QLineEdit(self.groupBox_9)
+        self.frame_right_border_line_edit.setObjectName(u"frame_right_border_line_edit")
+        self.frame_right_border_line_edit.setFont(font3)
+        self.frame_right_border_line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.verticalLayout_20.addWidget(self.frame_right_border_line_edit)
+
+
+        self.horizontalLayout_11.addLayout(self.verticalLayout_20)
+
+        self.verticalLayout_19 = QVBoxLayout()
+        self.verticalLayout_19.setObjectName(u"verticalLayout_19")
+        self.label_12 = QLabel(self.groupBox_9)
+        self.label_12.setObjectName(u"label_12")
+        self.label_12.setMaximumSize(QSize(16777215, 20))
+        self.label_12.setFont(font3)
+        self.label_12.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.verticalLayout_19.addWidget(self.label_12)
+
+        self.frame_left_border_line_edit = QLineEdit(self.groupBox_9)
+        self.frame_left_border_line_edit.setObjectName(u"frame_left_border_line_edit")
+        self.frame_left_border_line_edit.setFont(font3)
+        self.frame_left_border_line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.verticalLayout_19.addWidget(self.frame_left_border_line_edit)
+
+
+        self.horizontalLayout_11.addLayout(self.verticalLayout_19)
+
+
+        self.verticalLayout_21.addLayout(self.horizontalLayout_11)
+
+        self.change_frame_borders_push_button = QPushButton(self.groupBox_9)
+        self.change_frame_borders_push_button.setObjectName(u"change_frame_borders_push_button")
+
+        self.verticalLayout_21.addWidget(self.change_frame_borders_push_button)
+
+
+        self.horizontalLayout_12.addWidget(self.groupBox_9)
 
         self.tabWidget.addTab(self.tab_3, "")
         self.tab_2 = QWidget()
@@ -821,10 +936,21 @@ class Ui_Widget(object):
         self.transmitter_check_box.setText(QCoreApplication.translate("Widget", u"\u041f\u0435\u0440\u0435\u0434\u0430\u0442\u0447\u0438\u043a", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_5), QCoreApplication.translate("Widget", u"\u041f\u0430\u0440\u0430\u043c\u0435\u0442\u0440\u044b", None))
         self.groupBox_5.setTitle("")
-        self.toggle_roi_radio_button.setText(QCoreApplication.translate("Widget", u"\u041f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0442\u044c \u0440\u0430\u043c\u043a\u0443 ROI (\u043a\u043b\u0438\u0435\u043d\u0442)", None))
-        self.toggle_server_roi_radio_button.setText(QCoreApplication.translate("Widget", u"\u041f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0442\u044c \u0440\u0430\u043c\u043a\u0443 ROI (\u0441\u0435\u0440\u0432\u0435\u0440)", None))
-        self.toggle_crosshair_radio_button.setText(QCoreApplication.translate("Widget", u"\u041f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0442\u044c \u043f\u0440\u0438\u0446\u0435\u043b (\u0446\u0435\u043d\u0442\u0440) (\u043a\u043b\u0438\u0435\u043d\u0442) ", None))
-        self.toggle_server_crosshair_radio_button.setText(QCoreApplication.translate("Widget", u"\u041f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0442\u044c \u043f\u0440\u0438\u0446\u0435\u043b (\u0446\u0435\u043d\u0442\u0440) (\u0441\u0435\u0440\u0432\u0435\u0440)", None))
+        self.toggle_roi_radio_button.setText(QCoreApplication.translate("Widget", u"\u0412\u043a\u043b. \u0440\u0430\u043c\u043a\u0443 ROI (\u043a\u043b\u0438\u0435\u043d\u0442)", None))
+        self.toggle_server_roi_radio_button.setText(QCoreApplication.translate("Widget", u"\u0412\u043a\u043b. \u0440\u0430\u043c\u043a\u0443 ROI (\u0441\u0435\u0440\u0432\u0435\u0440)", None))
+        self.toggle_crosshair_radio_button.setText(QCoreApplication.translate("Widget", u"\u0412\u043a\u043b. \u043f\u0440\u0438\u0446\u0435\u043b (\u0446\u0435\u043d\u0442\u0440) (\u043a\u043b\u0438\u0435\u043d\u0442) ", None))
+        self.toggle_server_crosshair_radio_button.setText(QCoreApplication.translate("Widget", u"\u0412\u043a\u043b. \u043f\u0440\u0438\u0446\u0435\u043b (\u0446\u0435\u043d\u0442\u0440) (\u0441\u0435\u0440\u0432\u0435\u0440)", None))
+        self.groupBox_9.setTitle(QCoreApplication.translate("Widget", u"\u041e\u0442\u0441\u0442\u0443\u043f\u044b (\u043f\u0435\u0440\u0435\u0434\u0430\u0442\u0447\u0438\u043a)", None))
+        self.keep_frame_aspect_ratio_radio_button.setText(QCoreApplication.translate("Widget", u"\u0421\u043e\u0445\u0440. \u0441\u043e\u043e\u0442\u043d\u043e\u0448\u0435\u043d\u0438\u0435 \u0441\u0442\u043e\u0440\u043e\u043d", None))
+        self.label_14.setText(QCoreApplication.translate("Widget", u"\u0412\u0435\u0440\u0445", None))
+        self.frame_upper_border_line_edit.setText(QCoreApplication.translate("Widget", u"0", None))
+        self.label_13.setText(QCoreApplication.translate("Widget", u"\u041d\u0438\u0437", None))
+        self.frame_lower_border_line_edit.setText(QCoreApplication.translate("Widget", u"0", None))
+        self.label_11.setText(QCoreApplication.translate("Widget", u"\u041f\u0440\u0430\u0432\u043e", None))
+        self.frame_right_border_line_edit.setText(QCoreApplication.translate("Widget", u"0", None))
+        self.label_12.setText(QCoreApplication.translate("Widget", u"\u041b\u0435\u0432\u043e", None))
+        self.frame_left_border_line_edit.setText(QCoreApplication.translate("Widget", u"0", None))
+        self.change_frame_borders_push_button.setText(QCoreApplication.translate("Widget", u"\u0418\u0437\u043c\u0435\u043d\u0438\u0442\u044c", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), QCoreApplication.translate("Widget", u"\u041e\u0442\u043e\u0431\u0440\u0430\u0436\u0435\u043d\u0438\u0435", None))
         self.line_edit_c1.setPlaceholderText(QCoreApplication.translate("Widget", u"C1", None))
         self.line_edit_c2.setPlaceholderText(QCoreApplication.translate("Widget", u"C2", None))

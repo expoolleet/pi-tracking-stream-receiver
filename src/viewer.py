@@ -33,7 +33,7 @@ class Viewer(QWidget):
     stop_pressed_signal = Signal()
 
 
-    def __init__(self, parent=None, stream_receiver: StreamReceiver=None, frame_rate=30):
+    def __init__(self, parent=None, stream_receiver: StreamReceiver=None, frame_rate=60):
         super().__init__(parent)
         self.parent = parent
         self.ui = parent.ui

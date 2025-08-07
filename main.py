@@ -56,6 +56,10 @@ class Widget(QWidget):
         self.ui.roi_height_line_edit.setValidator(validator)
         self.ui.training_count_line_edit.setValidator(validator)
         self.ui.stream_fps_line_edit.setValidator(validator)
+        self.ui.frame_upper_border_line_edit.setValidator(validator)
+        self.ui.frame_lower_border_line_edit.setValidator(validator)
+        self.ui.frame_left_border_line_edit.setValidator(validator)
+        self.ui.frame_right_border_line_edit.setValidator(validator)
 
         validator = QRegularExpressionValidator(QRegularExpression(r"[+-]?([0-9]*[.])?[0-9]+"))
         self.ui.alpha_smoothing_line_edit.setValidator(validator)
@@ -74,7 +78,6 @@ class Widget(QWidget):
         self.viewer.stop_pressed_signal.connect(self.ui.roi_label.clear)
         self.load_start_state_signal.connect(self.viewer.load_no_connection_view)
         self.toggle_view_signal.connect(self.viewer.toggle_view)
-        self.toggle_view_signal.connect(lambda: self.viewer.set_frame_rate(int(self.ui.stream_fps_line_edit.text())))
 
         self.roi_handler = ROIHandler(self, self.ui.view_label, self.ui.roi_label, 1/int(self.ui.stream_fps_line_edit.text()))
         self.roi_handler.roi_selected_signal.connect(self.enable_tracking)
@@ -211,6 +214,7 @@ class Widget(QWidget):
             self.roi_handler.change_state(ROIState.FAST_SELECTING)
         self.socket_handler.send(Command.TOGGLE_ROI, self.ui.toggle_server_roi_radio_button.isChecked())
         self.socket_handler.send(Command.TOGGLE_CROSSHAIR, self.ui.toggle_server_crosshair_radio_button.isChecked())
+        self.socket_handler.send(Command.CHANGE_FRAME_BORDERS, self.get_frame_borders_data())
         self.toggle_view_signal.emit()
 
 
@@ -426,18 +430,22 @@ class Widget(QWidget):
             self.stream_receiver.set_default_stream_size()
             return
 
-        self.ui.kalman_radio_button.setChecked(saved_data["kalman"])
-        self.stream_receiver.change_stream_size_with_index(saved_data["stream_size_index"])
-        self.ui.fast_roi_radio_button.setChecked(saved_data["fast_roi"])
-        self.ui.roi_width_slider.setValue(saved_data["fast_roi_width"])
-        self.ui.roi_height_slider.setValue(saved_data["fast_roi_height"])
-        self.ui.roi_width_line_edit.setText(str(saved_data["fast_roi_width"]))
-        self.ui.roi_height_line_edit.setText(str(saved_data["fast_roi_height"]))
-        self.ui.toggle_roi_radio_button.setChecked(saved_data["toggle_roi"])
-        self.ui.toggle_crosshair_radio_button.setChecked(saved_data["toggle_crosshair"])
-        self.ui.toggle_server_roi_radio_button.setChecked(saved_data["server_toggle_roi"])
-        self.ui.toggle_server_crosshair_radio_button.setChecked(saved_data["server_toggle_crosshair"])
-        self.ui.optimal_fast_roi_step_radio_button.setChecked(saved_data["optimal_fast_roi_step"])
+        try:
+            self.ui.kalman_radio_button.setChecked(saved_data["kalman"])
+            self.stream_receiver.change_stream_size_with_index(saved_data["stream_size_index"])
+            self.ui.fast_roi_radio_button.setChecked(saved_data["fast_roi"])
+            self.ui.roi_width_slider.setValue(saved_data["fast_roi_width"])
+            self.ui.roi_height_slider.setValue(saved_data["fast_roi_height"])
+            self.ui.roi_width_line_edit.setText(str(saved_data["fast_roi_width"]))
+            self.ui.roi_height_line_edit.setText(str(saved_data["fast_roi_height"]))
+            self.ui.toggle_roi_radio_button.setChecked(saved_data["toggle_roi"])
+            self.ui.toggle_crosshair_radio_button.setChecked(saved_data["toggle_crosshair"])
+            self.ui.toggle_server_roi_radio_button.setChecked(saved_data["server_toggle_roi"])
+            self.ui.toggle_server_crosshair_radio_button.setChecked(saved_data["server_toggle_crosshair"])
+            self.ui.optimal_fast_roi_step_radio_button.setChecked(saved_data["optimal_fast_roi_step"])
+            self.ui.keep_frame_aspect_ratio_radio_button.setChecked(saved_data["keep_frame_aspect_ratio"])
+        except KeyError:
+            pass
 
         if "skip_frames" in saved_data:
             self.ui.skip_frame_line_edit.setText(str(saved_data["skip_frames"]))
@@ -468,6 +476,14 @@ class Widget(QWidget):
                 if image_cb.objectName() == saved_data["image_check_box"]:
                     image_cb.setChecked(True)
                     break
+        if "frame_upper_border" in saved_data:
+            self.ui.frame_upper_border_line_edit.setText(str(saved_data["frame_upper_border"]))
+        if "frame_lower_border" in saved_data:
+            self.ui.frame_lower_border_line_edit.setText(str(saved_data["frame_lower_border"]))
+        if "frame_left_border" in saved_data:
+            self.ui.frame_left_border_line_edit.setText(str(saved_data["frame_left_border"]))
+        if "frame_right_border" in saved_data:
+            self.ui.frame_right_border_line_edit.setText(str(saved_data["frame_right_border"]))
 
 
     def save_parameters(self) -> None:
@@ -483,7 +499,8 @@ class Widget(QWidget):
             "toggle_crosshair": self.ui.toggle_crosshair_radio_button.isChecked(),
             "server_toggle_roi": self.ui.toggle_server_roi_radio_button.isChecked(),
             "server_toggle_crosshair": self.ui.toggle_server_crosshair_radio_button.isChecked(),
-            "optimal_fast_roi_step": self.ui.optimal_fast_roi_step_radio_button.isChecked()
+            "optimal_fast_roi_step": self.ui.optimal_fast_roi_step_radio_button.isChecked(),
+            "keep_frame_aspect_ratio": self.ui.keep_frame_aspect_ratio_radio_button.isChecked(),
         }
 
         for image_cb in self.image_checkboxes:
@@ -511,6 +528,14 @@ class Widget(QWidget):
             params["line_edit_c2"] = int(self.ui.line_edit_c2.text())
         if self.ui.line_edit_c3.text() != '':
             params["line_edit_c3"] = int(self.ui.line_edit_c3.text())
+        if self.ui.frame_upper_border_line_edit.text() != '':
+            params["frame_upper_border"] = int(self.ui.frame_upper_border_line_edit.text())
+        if self.ui.frame_lower_border_line_edit.text() != '':
+            params["frame_lower_border"] = int(self.ui.frame_lower_border_line_edit.text())
+        if self.ui.frame_left_border_line_edit.text() != '':
+            params["frame_left_border"] = int(self.ui.frame_left_border_line_edit.text())
+        if self.ui.frame_right_border_line_edit.text() != '':
+            params["frame_right_border"] = int(self.ui.frame_right_border_line_edit.text())
 
         self.save_thread = threading.Thread(target=self._save_parameters, args=(params,))
         self.save_thread.start()
@@ -548,6 +573,16 @@ class Widget(QWidget):
         self.ui.cancel_connection_button.setEnabled(self.start_state["cancel_connection_button"]["enabled"])
         self.ui.tracker_stop_button.setEnabled(self.start_state["tracker_stop_button"]["enabled"])
         self.ui.tracker_params_group_box.setEnabled(self.start_state["tracker_params_group_box"]["enabled"])
+
+    def get_frame_borders_data(self) -> dict:
+        borders = {
+            "top": int(self.ui.frame_upper_border_line_edit.text()),
+            "bottom": int(self.ui.frame_lower_border_line_edit.text()),
+            "left": int(self.ui.frame_left_border_line_edit.text()),
+            "right": int(self.ui.frame_right_border_line_edit.text()),
+            "keep_aspect_ratio" : self.ui.keep_frame_aspect_ratio_radio_button.isChecked()
+        }
+        return borders
 
 
     def on_disconnect_from_server(self) -> None:
@@ -628,6 +663,11 @@ class Widget(QWidget):
         cf2 = int(self.ui.line_edit_c2.text())
         cf3 = int(self.ui.line_edit_c3.text())
         self.socket_handler.send(Command.SEND_CFS, [cf1, cf2, cf3])
+
+    @QtCore.Slot()
+    def on_change_frame_borders_push_button_clicked(self) -> None:
+        borders = self.get_frame_borders_data()
+        self.socket_handler.send(Command.CHANGE_FRAME_BORDERS, borders)
 
 
 class MouseEventFilter(QObject):

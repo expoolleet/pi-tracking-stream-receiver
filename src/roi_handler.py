@@ -62,9 +62,9 @@ class ROIHandler(QObject):
         self.set_roi(INIT_ROI)
 
         self.interpolation_step = interpolation_step
-        self.interpolation_sleep_time = 0.001
+        self.interpolation_duration = 0.3
 
-        self._x_offset = 5
+        self._x_offset = 0
 
     @staticmethod
     def get_optimal_roi_size(size, index_offset) -> int:
@@ -131,11 +131,15 @@ class ROIHandler(QObject):
         roi_width = abs(x2 - x1)
         roi_height = abs(y2 - y1)
 
+        x = int(min(x1, x2)) - self._x_offset
+        y = int(min(y1, y2))
+        width = int(roi_width)
+        height = int(roi_height)
         roi = [
-            int(min(x1, x2)) - self._x_offset,
-            int(min(y1, y2)),
-            int(roi_width),
-            int(roi_height),
+            x if x > 0 else 0,
+            y if y > 0 else 0,
+            width,
+            height,
         ]
         return roi
 
@@ -147,35 +151,47 @@ class ROIHandler(QObject):
             self.change_state(ROIState.FAILED)
         else:
             self.change_state(ROIState.TRACKING)
-            # if roi == self.get_roi():
-            #     return
-            # else:
+
             width_offset = self.stream_size[0] / self.tracking_frame_size[0]
             height_offset = self.stream_size[1] / self.tracking_frame_size[1]
             new_roi = [int(roi[0] * width_offset) + self._x_offset, int(roi[1] * height_offset),
                        int(roi[2] * width_offset), int(roi[3] * height_offset)]
-            self.set_roi(new_roi)
-            # if self._smooth_update_thread is None or not self._smooth_update_thread.is_alive():
-            #     self._stop_smooth_event.clear()
-            #     self._smooth_update_thread = threading.Thread(target=self.smooth_update_roi, args=(new_roi,), daemon=True)
-            #     self._smooth_update_thread.start()
-            # else:
-            #     self._stop_smooth_event.set()
+            if self.get_roi() == new_roi:
+                return
+
+            if self._smooth_update_thread and self._smooth_update_thread.is_alive():
+                self._stop_smooth_event.set()
+                self._smooth_update_thread.join(timeout=self.interpolation_duration + 0.1)
+
+            self._stop_smooth_event.clear()
+
+            self._smooth_update_thread = threading.Thread(
+                target=self.smooth_update_roi,
+                args=(new_roi,),
+                daemon=True
+            )
+            self._smooth_update_thread.start()
 
 
     def smooth_update_roi(self, new_roi) -> None:
-        time.sleep(self.interpolation_step)
         old_roi = self.get_roi()
-        t = 0
-        tend = 1
-        while t != tend and not self._stop_smooth_event.is_set() and self.current_state == ROIState.TRACKING:
-            x = (tend - t) * old_roi[0] + t * new_roi[0]
-            y = (tend - t) * old_roi[1] + t * new_roi[1]
-            w = (tend - t) * old_roi[2] + t * new_roi[2]
-            h = (tend - t) * old_roi[3] + t * new_roi[3]
-            self.set_roi([int(x), int(y), int(w), int(h)])
-            t = min(t + self.interpolation_step, tend)
-            time.sleep(self.interpolation_sleep_time)
+        start_time = time.time()
+
+        while not self._stop_smooth_event.is_set():
+            elapsed_time = time.time() - start_time
+
+            progress = elapsed_time / self.interpolation_duration
+            if progress >= 1.0:
+                break
+            x = old_roi[0] + (new_roi[0] - old_roi[0]) * progress
+            y = old_roi[1] + (new_roi[1] - old_roi[1]) * progress
+            w = old_roi[2] + (new_roi[2] - old_roi[2]) * progress
+            h = old_roi[3] + (new_roi[3] - old_roi[3]) * progress
+
+            current_roi = [int(x), int(y), int(w), int(h)]
+            self.set_roi(current_roi)
+
+            time.sleep(self.interpolation_step)
         if self.current_state == ROIState.TRACKING:
             self.set_roi(new_roi)
 
