@@ -20,7 +20,7 @@ class SocketData:
 class SocketHandler(QObject):
 
     update_roi_signal = Signal(np.ndarray)
-    start_tracing_signal = Signal()
+    start_tracking_signal = Signal()
     stop_tracking_signal = Signal()
     disconnect_from_server_signal = Signal()
     update_tracker_data_signal = Signal(dict)
@@ -88,7 +88,7 @@ class SocketHandler(QObject):
                         self.update_tracker_data_signal.emit(message["data"])
                         self.update_roi_signal.emit(message["data"]["roi"])
                     elif message["command"] == Command.REQUEST_TRACKING:
-                        self.start_tracing_signal.emit()
+                        self.start_tracking_signal.emit()
                 else:
                     self.debug.send(f"Received unknown message: {message}")
         except RuntimeError:

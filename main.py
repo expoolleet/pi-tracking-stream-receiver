@@ -122,7 +122,7 @@ class Widget(QWidget):
         self.socket_handler.stop_tracking_signal.connect(self.roi_handler.try_reset_roi)
         self.socket_handler.stop_tracking_signal.connect(self.handle_ui_when_tracker_is_stopped)
         self.socket_handler.update_tracker_data_signal.connect(self.update_tracker_data)
-        self.socket_handler.start_tracing_signal.connect(self.roi_handler.try_send_roi_to_server)
+        self.socket_handler.start_tracking_signal.connect(self.roi_handler.try_send_roi_to_server)
 
         self.debug = DebugEmitter(self)
         self.debug.debug_signal.connect(self.show_debug_message)
@@ -316,8 +316,6 @@ class Widget(QWidget):
     def stop_stream(self) -> None:
         if self.ui.stream_check_box.isChecked():
             self.socket_handler.send(Command.STOP_STREAM)
-        if self.ui.transmitter_check_box.isChecked():
-            self.socket_handler.send(Command.STOP_TRANSMISSION)
 
 
     def update_view_label(self, frame: np.ndarray) -> None:
@@ -588,7 +586,7 @@ class Widget(QWidget):
     def on_disconnect_from_server(self) -> None:
         self.viewer.stop()
         self.zeroconf_handler.clear()
-        self.roi_handler.try_send_roi()
+        self.roi_handler.try_reset_roi()
         self.socket_handler.disconnect()
         self.load_start_state_signal.emit()
 
@@ -651,7 +649,7 @@ class Widget(QWidget):
             return
         self.socket_handler.send(Command.REBOOT_SERVER)
         self.socket_handler.disconnect()
-        self.roi_handler.try_send_roi()
+        self.roi_handler.try_reset_roi()
         self.viewer.stop()
         self.zeroconf_handler.clear()
         self.load_start_state_signal.emit()

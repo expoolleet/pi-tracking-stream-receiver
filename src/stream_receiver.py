@@ -143,7 +143,7 @@ class StreamReceiver(QWidget):
 
     def read_stream(self) -> None:
         """
-        Reads the stream pipe than saving the current frame
+        Reads the stream pipe then saving the current frame
         :return None:
         """
         if self.stream_width == 0 or self.stream_height == 0:
