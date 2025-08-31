@@ -168,6 +168,8 @@ class Widget(QWidget):
 
         self.save_thread = None
 
+        self.is_app_closing = False
+
         self.data = Data(self, __file__, is_parent=True)
         self.load_saved_parameters()
 
@@ -179,7 +181,7 @@ class Widget(QWidget):
         if check_box == self.ui.transmitter_check_box:
             if state == Qt.CheckState.Checked.value:
                 self.ui.stream_quality_group_box.setEnabled(False)
-                self.stream_receiver.change_stream_size_with_index(StreamSize.SIZE_360[0])
+                self.stream_receiver.change_stream_size_with_index(StreamSize.SIZE_480[0])
 
 
     def wheelEvent(self, event: QWheelEvent) -> None:
@@ -316,6 +318,8 @@ class Widget(QWidget):
     def stop_stream(self) -> None:
         if self.ui.stream_check_box.isChecked():
             self.socket_handler.send(Command.STOP_STREAM)
+        if self.ui.transmitter_check_box.isChecked() and not self.is_app_closing:
+            self.socket_handler.send(Command.STOP_TRANSMISSION)
 
 
     def update_view_label(self, frame: np.ndarray) -> None:
@@ -592,6 +596,7 @@ class Widget(QWidget):
 
 
     def closeEvent(self, e) -> None:
+        self.is_app_closing = True
         self.save_parameters()
         self.viewer.stop()
         self.zeroconf_handler.clear()
