@@ -64,7 +64,8 @@ class ROIHandler(QObject):
         self.interpolation_step = interpolation_step
         self.interpolation_duration = 0.3
 
-        self._x_offset = 0
+        self.fast_roi_width = 0
+        self.fast_roi_height = 0
 
     @staticmethod
     def get_optimal_roi_size(size, index_offset) -> int:
@@ -131,7 +132,7 @@ class ROIHandler(QObject):
         roi_width = abs(x2 - x1)
         roi_height = abs(y2 - y1)
 
-        x = int(min(x1, x2)) - self._x_offset
+        x = int(min(x1, x2))
         y = int(min(y1, y2))
         width = int(roi_width)
         height = int(roi_height)
@@ -145,32 +146,36 @@ class ROIHandler(QObject):
 
 
     def update_roi(self, roi) -> None:
-        if self.current_state == ROIState.SELECTING:
+        if self.current_state == ROIState.SELECTING or self.current_state == ROIState.CANCELED:
             return
         if all(v == 0 for v in roi):
             self.change_state(ROIState.FAILED)
         else:
-            self.change_state(ROIState.TRACKING)
-
             width_offset = self.stream_size[0] / self.tracking_frame_size[0]
             height_offset = self.stream_size[1] / self.tracking_frame_size[1]
-            new_roi = [int(roi[0] * width_offset) + self._x_offset, int(roi[1] * height_offset),
+            new_roi = [int(roi[0] * width_offset), int(roi[1] * height_offset),
                        int(roi[2] * width_offset), int(roi[3] * height_offset)]
             if self.get_roi() == new_roi:
+                if self.current_state != ROIState.TRACKING:
+                    self.change_state(ROIState.TRACKING)
                 return
 
-            if self._smooth_update_thread and self._smooth_update_thread.is_alive():
-                self._stop_smooth_event.set()
-                self._smooth_update_thread.join(timeout=self.interpolation_duration + 0.1)
+            if self.current_state == ROIState.TRACKING:
+                if self._smooth_update_thread and self._smooth_update_thread.is_alive():
+                    self._stop_smooth_event.set()
+                    self._smooth_update_thread.join(timeout=self.interpolation_duration + 0.1)
 
-            self._stop_smooth_event.clear()
+                self._stop_smooth_event.clear()
 
-            self._smooth_update_thread = threading.Thread(
-                target=self.smooth_update_roi,
-                args=(new_roi,),
-                daemon=True
-            )
-            self._smooth_update_thread.start()
+                self._smooth_update_thread = threading.Thread(
+                    target=self.smooth_update_roi,
+                    args=(new_roi,),
+                    daemon=True
+                )
+                self._smooth_update_thread.start()
+            else:
+                self.set_roi(new_roi)
+                self.change_state(ROIState.TRACKING)
 
 
     def smooth_update_roi(self, new_roi) -> None:
@@ -206,16 +211,11 @@ class ROIHandler(QObject):
 
 
     def reset_roi(self) -> None:
-        self.change_state(ROIState.NONE)
-        self.set_roi(INIT_ROI)
-
-
-    def try_reset_roi(self) -> bool:
         if self.current_state == ROIState.FAST_SELECTING:
-            return False
-        self.change_state(ROIState.NONE)
-        self.set_roi(INIT_ROI)
-        return True
+            self.reset_fast_roi()
+        else:
+            self.change_state(ROIState.NONE)
+            self.set_roi(INIT_ROI)
 
 
     def on_key_pressed_try_send_roi(self) -> None:
@@ -268,7 +268,7 @@ class ROIHandler(QObject):
 
 
     def on_right_click_cancel_roi(self, pos) -> None:
-        if not self.enabled or self.current_state == ROIState.TRACKING or self.current_state == ROIState.FAST_SELECTING:
+        if not self.enabled or self.current_state == ROIState.FAST_SELECTING:
             return
         self.reset_points()
         self.reset_roi()
@@ -347,6 +347,9 @@ class ROIHandler(QObject):
 
             roi = [x, y, width, height]
 
+            self.fast_roi_width = width
+            self.fast_roi_height = height
+
             self.set_roi(roi)
             self.start_point = [roi[0], roi[1]]
             self.end_point = [roi[0] + roi[2], roi[1] + roi[3]]
@@ -357,10 +360,9 @@ class ROIHandler(QObject):
 
     def reset_fast_roi(self) -> None:
         center_point = (self.stream_size[0] // 2, self.stream_size[1] // 2)
-        current_roi = self.get_roi()
-        x = center_point[0] - current_roi[2] // 2
-        y = center_point[1] - current_roi[3] // 2
-        roi = [x, y, current_roi[2], current_roi[3]]
+        x = center_point[0] - self.fast_roi_width // 2
+        y = center_point[1] - self.fast_roi_height // 2
+        roi = [x, y, self.fast_roi_width, self.fast_roi_height]
         self.set_roi(roi)
         self.start_point = [roi[0], roi[1]]
         self.end_point = [roi[0] + roi[2], roi[1] + roi[3]]

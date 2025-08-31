@@ -119,7 +119,7 @@ class Widget(QWidget):
 
         self.socket_handler = SocketHandler(self)
         self.socket_handler.update_roi_signal.connect(self.on_roi_update)
-        self.socket_handler.stop_tracking_signal.connect(self.roi_handler.try_reset_roi)
+        self.socket_handler.stop_tracking_signal.connect(self.roi_handler.reset_roi)
         self.socket_handler.stop_tracking_signal.connect(self.handle_ui_when_tracker_is_stopped)
         self.socket_handler.update_tracker_data_signal.connect(self.update_tracker_data)
         self.socket_handler.start_tracking_signal.connect(self.roi_handler.try_send_roi_to_server)
@@ -199,7 +199,11 @@ class Widget(QWidget):
     def update_tracker_data(self, data) -> None:
         plain_text = ''
         for key in data:
-            plain_text += f"{key.capitalize().replace('_', ' ')}: {data[key]}\n\n"
+            value = data[key]
+            if isinstance(value, float):
+                plain_text += f"{key.capitalize().replace('_', ' ')}: {value:.2f}\n\n"
+            else:
+                plain_text += f"{key.capitalize().replace('_', ' ')}: {data[key]}\n\n"
         self.ui.tracker_data_plain_text.setPlainText(plain_text)
 
 
@@ -590,7 +594,7 @@ class Widget(QWidget):
     def on_disconnect_from_server(self) -> None:
         self.viewer.stop()
         self.zeroconf_handler.clear()
-        self.roi_handler.try_reset_roi()
+        self.roi_handler.reset_roi()
         self.socket_handler.disconnect()
         self.load_start_state_signal.emit()
 
@@ -609,7 +613,6 @@ class Widget(QWidget):
 
 
     def handle_ui_when_tracker_is_stopped(self) -> None:
-        self.is_tracking_stopped = True
         self.ui.tracker_stop_button.setEnabled(False)
         self.ui.kalman_group_box.setEnabled(True)
         self.ui.fast_roi_group_box.setEnabled(True)
@@ -641,10 +644,11 @@ class Widget(QWidget):
 
     @QtCore.Slot()
     def on_tracker_stop_button_clicked(self) -> None:
+        self.is_tracking_stopped = True
         if not self.ui.tracker_stop_button.isEnabled():
             return
-        self.handle_ui_when_tracker_is_stopped()
         self.socket_handler.send(Command.STOP_TRACKING)
+        self.handle_ui_when_tracker_is_stopped()
 
 
     @QtCore.Slot()
@@ -654,7 +658,7 @@ class Widget(QWidget):
             return
         self.socket_handler.send(Command.REBOOT_SERVER)
         self.socket_handler.disconnect()
-        self.roi_handler.try_reset_roi()
+        self.roi_handler.reset_roi()
         self.viewer.stop()
         self.zeroconf_handler.clear()
         self.load_start_state_signal.emit()
