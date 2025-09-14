@@ -34,6 +34,7 @@ class StreamSize:
     SIZE_360 = (2, (448, 360))
     SIZE_240 = (3, (320, 240))
     SIZE_144 = (4, (192, 144))
+    SIZE_NONE = (5, (0, 0))
 
 
 class StreamReceiver(QWidget):
@@ -194,7 +195,7 @@ class StreamReceiver(QWidget):
             self.set_stream_size(StreamSize.SIZE_360[1])
         elif index == StreamSize.SIZE_240[0]:
             self.set_stream_size(StreamSize.SIZE_240[1])
-        else:
+        elif index == StreamSize.SIZE_144[0]:
             self.set_stream_size(StreamSize.SIZE_144[1])
         self.change_stream_size_with_index_signal.emit(index)
 

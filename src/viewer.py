@@ -24,8 +24,6 @@ else:
 NO_CONNECTION_IMAGE = base_path / "img" / "no_connection.png"
 CONNECTION_ESTABLISHED_IMAGE = base_path / "img" / "connection_established.png"
 
-BLACK_FRAME = np.zeros((360, 448, 3), dtype=np.uint8)
-
 class Viewer(QWidget):
 
     frame_ready_signal = Signal(np.ndarray)
@@ -43,6 +41,7 @@ class Viewer(QWidget):
         self.is_playing = False
         self.stream_url = None
         self.tracking_frame_size = (0, 0)
+        self.black_frame = None
 
         self.debug = DebugEmitter()
 
@@ -133,11 +132,12 @@ class Viewer(QWidget):
                 self.tracking_frame_size,
                 cv2.INTER_LINEAR)
             if self.system_camera and self.system_camera.read()[0]
-            else BLACK_FRAME)
+            else self.black_frame)
 
 
     def set_tracking_frame_size(self, size):
         self.tracking_frame_size = size
+        self.black_frame = np.zeros((size[1], size[0], 3), dtype=np.uint8)
 
 
     def change_stream_url(self, stream_params) -> None:

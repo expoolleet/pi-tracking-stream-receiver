@@ -142,6 +142,8 @@ class Widget(QWidget):
         self.ui.stream_size_combo_box.addItem("360p")
         self.ui.stream_size_combo_box.addItem("240p")
         self.ui.stream_size_combo_box.addItem("144p")
+        self.ui.stream_size_combo_box.addItem("-")
+        self.ui.stream_size_combo_box.model().item(self.ui.stream_size_combo_box.count() - 1).setEnabled(False)
 
         self.ui.stream_size_combo_box.currentIndexChanged.connect(self.stream_receiver.change_stream_size_with_index)
         self.stream_receiver.change_stream_size_with_index_signal.connect(self.ui.stream_size_combo_box.setCurrentIndex)
@@ -181,7 +183,7 @@ class Widget(QWidget):
         if check_box == self.ui.transmitter_check_box:
             if state == Qt.CheckState.Checked.value:
                 self.ui.stream_quality_group_box.setEnabled(False)
-                self.stream_receiver.change_stream_size_with_index(StreamSize.SIZE_480[0])
+                self.stream_receiver.change_stream_size_with_index(StreamSize.SIZE_NONE[0])
 
 
     def wheelEvent(self, event: QWheelEvent) -> None:
@@ -216,6 +218,8 @@ class Widget(QWidget):
         self.socket_handler.connect(params["server_ip"], params["server_port"])
         self.roi_handler.set_tracking_frame_size(params["tracking_frame_size"])
         self.viewer.set_tracking_frame_size(params["tracking_frame_size"])
+        self.stream_receiver.set_stream_size(params["tracking_frame_size"])
+        self.roi_handler.set_stream_size(params["tracking_frame_size"])
         if self.ui.fast_roi_radio_button.isChecked():
             self.roi_handler.change_state(ROIState.FAST_SELECTING)
         self.socket_handler.send(Command.TOGGLE_ROI, self.ui.toggle_server_roi_radio_button.isChecked())
