@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QPixmap
 
-from src.tools import numpy_to_pixmap, DebugEmitter
+from src.tools import numpy_to_pixmap, DebugEmitter, get_base_path
 from src.stream_receiver import StreamReceiver
 
 import threading
@@ -15,11 +15,7 @@ import sys
 import cv2
 from pathlib import Path
 
-
-if getattr(sys, 'frozen', False):
-    base_path = Path(sys._MEIPASS)
-else:
-    base_path = Path(__file__).resolve().parent
+base_path = get_base_path(__file__)
 
 NO_CONNECTION_IMAGE = base_path / "img" / "no_connection.png"
 CONNECTION_ESTABLISHED_IMAGE = base_path / "img" / "connection_established.png"

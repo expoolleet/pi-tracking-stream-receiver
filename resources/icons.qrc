@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file alias="en_icon">C:/Users/gosha/Desktop/en_icon.png</file>
+        <file alias="ru_icon">C:/Users/gosha/Desktop/ru_icon.png</file>
+    </qresource>
+</RCC>

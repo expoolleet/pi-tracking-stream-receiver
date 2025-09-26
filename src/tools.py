@@ -49,15 +49,22 @@ def scale_pixmap(pixmap, size) -> QPixmap:
     return pixmap.scaled(size, Qt.KeepAspectRatio, Qt.FastTransformation)
 
 
-def increase_grayscale_contrast(image, c = 1.0):
+def increase_grayscale_contrast(image, c = 1.0) -> np.ndarray:
     transformed_image = c * np.log(image + 1)
     max_value = np.max(transformed_image)
     if max_value > 0:
         transformed_image = (transformed_image / max_value) * 255
     else:
         transformed_image = transformed_image * 0
-    #print(transformed_image)
     return transformed_image.astype(np.uint8)
+
+
+def get_base_path(rel_path: str) -> Path:
+    if getattr(sys, 'frozen', False):
+        base_path = Path(sys._MEIPASS)
+    else:
+        base_path = Path(rel_path).resolve().parent
+    return base_path
 
 
 class DebugEmitter(QObject):

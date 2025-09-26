@@ -2,8 +2,8 @@
 import sys
 import datetime
 import threading
-
 import numpy as np
+import cv2
 
 from PySide6 import QtCore
 from PySide6.QtWidgets import QApplication, QWidget, QMessageBox
@@ -20,8 +20,7 @@ from src.zeroconf_handler import ZeroconfHandler
 from src.widgets_text import *
 from src.pipeline import WrapperPipeline
 from src.data import Data
-
-import cv2
+from src.localization import Localization
 
 # Important:
 # You need to run the following command to generate the ui_form.py file
@@ -32,9 +31,9 @@ from ui_form import Ui_Widget
 PARAMS_FILE_NAME = "params"
 SAVE_TIMEOUT = 5
 
+DEFAULT_LANGUAGE = "en"
 
 class Widget(QWidget):
-
     load_start_state_signal = Signal()
     toggle_view_signal = Signal()
     stream_size_changed_signal = Signal(tuple)
@@ -133,10 +132,6 @@ class Widget(QWidget):
         self.zeroconf_handler.listener.service_added_signal.connect(lambda params: self.viewer.load_connection_established_view())
         self.socket_handler.disconnect_from_server_signal.connect(self.on_disconnect_from_server)
 
-        self.start_state = self.capture_start_state()
-
-        self.load_start_state_signal.connect(self.load_start_state)
-
         self.ui.stream_size_combo_box.addItem("720p")
         self.ui.stream_size_combo_box.addItem("480p")
         self.ui.stream_size_combo_box.addItem("360p")
@@ -167,13 +162,20 @@ class Widget(QWidget):
         self.ui.optimal_fast_roi_step_radio_button.toggled.connect(self.enable_fast_roi_parameters)
 
         self.is_tracking_stopped = False
+        self.is_app_closing = False
 
         self.save_thread = None
 
-        self.is_app_closing = False
-
         self.data = Data(self, __file__, is_parent=True)
+
+        self.loc = Localization(self)
+        self.loc.load_strings()
+
+        self.start_state = self.capture_start_state()
+        self.load_start_state_signal.connect(self.load_start_state)
+
         self.load_saved_parameters()
+        self.loc.set_localisation()
 
 
     def handle_image_checkbox(self, check_box, state):
@@ -210,7 +212,7 @@ class Widget(QWidget):
 
 
     def on_service_added(self, params) -> None:
-        self.ui.connection_label.setText(f"{CONNECTED_TO} {params['server_ip']}:{params['server_port']}")
+        self.ui.connection_label.setText(f"{self.loc.tr(CONNECTED_TO)} {params['server_ip']}:{params['server_port']}")
         self.ui.toggle_button.setEnabled(True)
         self.ui.tracking_group_box.setEnabled(True)
         self.ui.reboot_server_button.setEnabled(True)
@@ -264,7 +266,7 @@ class Widget(QWidget):
             self.roi_handler.handle_fast_roi(True, self.ui.roi_width_slider.value(), height)
 
 
-    def enable_fast_roi_parameters(self, enabled):
+    def enable_fast_roi_parameters(self, enabled) -> None:
         self.ui.roi_width_line_edit.setEnabled(not enabled)
         self.ui.roi_width_slider.setEnabled(not enabled)
         self.ui.roi_height_line_edit.setEnabled(not enabled)
@@ -272,16 +274,16 @@ class Widget(QWidget):
 
 
 
-    def handle_roi_label_brightness(self, value):
+    def handle_roi_label_brightness(self, value) -> None:
         maximum_brightness = self.ui.roi_frame_brightness_slider.maximum()
         brightness = int((1 + value / maximum_brightness) * 100)
-        self.ui.roi_brightness_label.setText(f"{ROI_BRIGHTNESS_LABEL} {str(brightness)}%")
+        self.ui.roi_brightness_value_label.setText(f"{brightness}%")
 
 
-    def handle_roi_label_contrast(self, value):
+    def handle_roi_label_contrast(self, value) -> None:
         maximum_contrast = self.ui.roi_frame_contrast_slider.maximum()
         contrast = int((1 + value / maximum_contrast  - 0.5) * 100)
-        self.ui.roi_contrast_label.setText(f"{ROI_CONTRAST_LABEL} {str(contrast)}%")
+        self.ui.roi_contrast_value_label.setText(f"{contrast}%")
 
 
     def enable_tracking(self, roi) -> None:
@@ -384,12 +386,12 @@ class Widget(QWidget):
 
 
     def update_gui_on_play(self) -> None:
-        self.ui.toggle_button.setText(STOP_TEXT)
+        self.ui.toggle_button.setText(self.loc.tr(STOP_TEXT))
         self.ui.params_group_box.setEnabled(False)
 
 
     def update_gui_on_stop(self) -> None:
-        self.ui.toggle_button.setText(PLAY_TEXT)
+        self.ui.toggle_button.setText(self.loc.tr(PLAY_TEXT))
         self.ui.params_group_box.setEnabled(True)
 
 
@@ -494,6 +496,10 @@ class Widget(QWidget):
             self.ui.frame_left_border_line_edit.setText(str(saved_data["frame_left_border"]))
         if "frame_right_border" in saved_data:
             self.ui.frame_right_border_line_edit.setText(str(saved_data["frame_right_border"]))
+        if "lang" in saved_data:
+            self.loc.set_language(saved_data["lang"])
+        else:
+            self.loc.set_language(DEFAULT_LANGUAGE)
 
 
     def save_parameters(self) -> None:
@@ -511,6 +517,7 @@ class Widget(QWidget):
             "server_toggle_crosshair": self.ui.toggle_server_crosshair_radio_button.isChecked(),
             "optimal_fast_roi_step": self.ui.optimal_fast_roi_step_radio_button.isChecked(),
             "keep_frame_aspect_ratio": self.ui.keep_frame_aspect_ratio_radio_button.isChecked(),
+            "lang": self.loc.language
         }
 
         for image_cb in self.image_checkboxes:
@@ -551,7 +558,7 @@ class Widget(QWidget):
         self.save_thread.start()
 
 
-    def _save_parameters(self, params):
+    def _save_parameters(self, params) -> None:
         self.data.save_to_json(PARAMS_FILE_NAME, params)
 
 
@@ -628,23 +635,20 @@ class Widget(QWidget):
     @QtCore.Slot()
     def on_connect_button_clicked(self) -> None:
         self.zeroconf_handler.browse()
-        self.ui.connection_label.setText(CONNECTION_AWATING)
+        self.ui.connection_label.setText(self.loc.tr(CONNECTION_AWAITING))
         self.ui.connect_button.setEnabled(False)
         self.ui.cfs_group_box.setEnabled(True)
         self.ui.params_group_box.setEnabled(False)
         self.ui.cancel_connection_button.setEnabled(True)
-
 
     @QtCore.Slot()
     def on_cancel_connection_button_clicked(self) -> None:
         self.zeroconf_handler.clear()
         self.load_start_state_signal.emit()
 
-
     @QtCore.Slot()
     def on_toggle_button_clicked(self) -> None:
         self.toggle_view_signal.emit()
-
 
     @QtCore.Slot()
     def on_tracker_stop_button_clicked(self) -> None:
@@ -654,10 +658,9 @@ class Widget(QWidget):
         self.socket_handler.send(Command.STOP_TRACKING)
         self.handle_ui_when_tracker_is_stopped()
 
-
     @QtCore.Slot()
     def on_reboot_server_button_clicked(self) -> None:
-        reply = QMessageBox.question(self, "Stream Receiver", RESTART_SERVER, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        reply = QMessageBox.question(self, "Stream Receiver", self.loc.tr(RESTART_SERVER), QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.No:
             return
         self.socket_handler.send(Command.REBOOT_SERVER)
@@ -666,7 +669,6 @@ class Widget(QWidget):
         self.viewer.stop()
         self.zeroconf_handler.clear()
         self.load_start_state_signal.emit()
-
 
     @QtCore.Slot()
     def on_send_cfs_push_button_clicked(self) -> None:
@@ -680,6 +682,18 @@ class Widget(QWidget):
         borders = self.get_frame_borders_data()
         self.socket_handler.send(Command.CHANGE_FRAME_BORDERS, borders)
 
+    @QtCore.Slot()
+    def on_language_tool_button_clicked(self) -> None:
+        if self.loc.language == "en":
+            self.ui.language_tool_button.setIcon(self.loc.icons["ru"])
+            self.loc.set_language("ru")
+            self.loc.set_localisation()
+            self.start_state = self.capture_start_state()
+        else:
+            self.ui.language_tool_button.setIcon(self.loc.icons["en"])
+            self.loc.set_language("en")
+            self.loc.set_localisation()
+            self.start_state = self.capture_start_state()
 
 class MouseEventFilter(QObject):
     def __init__(self, callback_left_button=None, callbacks_right_button=None, callback_move=None):
