@@ -789,7 +789,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QLabel" name="init_corr_label">
+                   <widget class="QLabel" name="target_corr_label">
                     <property name="font">
                      <font>
                       <pointsize>8</pointsize>
@@ -801,7 +801,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QLineEdit" name="max_corr_line_edit">
+                   <widget class="QLineEdit" name="target_corr_line_edit">
                     <property name="maximumSize">
                      <size>
                       <width>16777215</width>
