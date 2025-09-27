@@ -354,20 +354,20 @@ class Ui_Widget(object):
 
         self.verticalLayout_11.addWidget(self.alpha_smoothing_line_edit)
 
-        self.init_corr_label = QLabel(self.tracker_params_group_box)
-        self.init_corr_label.setObjectName(u"init_corr_label")
-        self.init_corr_label.setFont(font2)
+        self.target_corr_label = QLabel(self.tracker_params_group_box)
+        self.target_corr_label.setObjectName(u"target_corr_label")
+        self.target_corr_label.setFont(font2)
 
-        self.verticalLayout_11.addWidget(self.init_corr_label)
+        self.verticalLayout_11.addWidget(self.target_corr_label)
 
-        self.max_corr_line_edit = QLineEdit(self.tracker_params_group_box)
-        self.max_corr_line_edit.setObjectName(u"max_corr_line_edit")
-        self.max_corr_line_edit.setMaximumSize(QSize(16777215, 16777215))
-        self.max_corr_line_edit.setFont(font3)
-        self.max_corr_line_edit.setMaxLength(5)
-        self.max_corr_line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.target_corr_line_edit = QLineEdit(self.tracker_params_group_box)
+        self.target_corr_line_edit.setObjectName(u"target_corr_line_edit")
+        self.target_corr_line_edit.setMaximumSize(QSize(16777215, 16777215))
+        self.target_corr_line_edit.setFont(font3)
+        self.target_corr_line_edit.setMaxLength(5)
+        self.target_corr_line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.verticalLayout_11.addWidget(self.max_corr_line_edit)
+        self.verticalLayout_11.addWidget(self.target_corr_line_edit)
 
         self.sigma_factor_label = QLabel(self.tracker_params_group_box)
         self.sigma_factor_label.setObjectName(u"sigma_factor_label")
@@ -971,8 +971,8 @@ class Ui_Widget(object):
         self.training_count_line_edit.setText(QCoreApplication.translate("Widget", u"9", None))
         self.alpha_smoothing_label.setText(QCoreApplication.translate("Widget", u"\u041a\u0444. \u0441\u0433\u043b\u0430\u0436\u0438\u0432\u0430\u043d.", None))
         self.alpha_smoothing_line_edit.setText(QCoreApplication.translate("Widget", u"0.7", None))
-        self.init_corr_label.setText(QCoreApplication.translate("Widget", u"\u0421\u0442\u0430\u0440\u0442\u043e\u0432. \u043a\u043e\u0440\u0440.", None))
-        self.max_corr_line_edit.setText(QCoreApplication.translate("Widget", u"0.25", None))
+        self.target_corr_label.setText(QCoreApplication.translate("Widget", u"\u0421\u0442\u0430\u0440\u0442\u043e\u0432. \u043a\u043e\u0440\u0440.", None))
+        self.target_corr_line_edit.setText(QCoreApplication.translate("Widget", u"0.25", None))
         self.sigma_factor_label.setText(QCoreApplication.translate("Widget", u"\u0424\u0430\u043a\u0442\u043e\u0440 \u0440. \u0446\u0435\u043b\u0438", None))
         self.sigma_factor_line_edit.setText(QCoreApplication.translate("Widget", u"0.05", None))
         self.kalman_group_box.setTitle(QCoreApplication.translate("Widget", u"\u041a\u0430\u043b\u043c\u0430\u043d", None))

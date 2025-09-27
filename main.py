@@ -37,6 +37,7 @@ class Widget(QWidget):
     load_start_state_signal = Signal()
     toggle_view_signal = Signal()
     stream_size_changed_signal = Signal(tuple)
+    language_changed_signal = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -62,7 +63,7 @@ class Widget(QWidget):
 
         validator = QRegularExpressionValidator(QRegularExpression(r"[+-]?([0-9]*[.])?[0-9]+"))
         self.ui.alpha_smoothing_line_edit.setValidator(validator)
-        self.ui.max_corr_line_edit.setValidator(validator)
+        self.ui.target_corr_line_edit.setValidator(validator)
         self.ui.sigma_factor_line_edit.setValidator(validator)
 
         self.stream_receiver = StreamReceiver(self)
@@ -163,6 +164,10 @@ class Widget(QWidget):
 
         self.is_tracking_stopped = False
         self.is_app_closing = False
+        self.is_connected_to_server = False
+
+        self.server_ip = None
+        self.server_port = None
 
         self.save_thread = None
 
@@ -173,6 +178,8 @@ class Widget(QWidget):
 
         self.start_state = self.capture_start_state()
         self.load_start_state_signal.connect(self.load_start_state)
+
+        self.language_changed_signal.connect(self.update_ui_text)
 
         self.load_saved_parameters()
         self.loc.set_localisation()
@@ -187,7 +194,6 @@ class Widget(QWidget):
                 self.ui.stream_quality_group_box.setEnabled(False)
                 self.stream_receiver.change_stream_size_with_index(StreamSize.SIZE_NONE[0])
 
-
     def wheelEvent(self, event: QWheelEvent) -> None:
         if self.roi_handler.current_state != ROIState.FAST_SELECTING:
             return
@@ -199,7 +205,6 @@ class Widget(QWidget):
         self.handle_roi_width(new_size)
         self.handle_roi_height(new_size)
 
-
     def update_tracker_data(self, data) -> None:
         plain_text = ''
         for key in data:
@@ -210,8 +215,10 @@ class Widget(QWidget):
                 plain_text += f"{key.capitalize().replace('_', ' ')}: {data[key]}\n\n"
         self.ui.tracker_data_plain_text.setPlainText(plain_text)
 
-
     def on_service_added(self, params) -> None:
+        self.is_connected_to_server = True
+        self.server_ip = params["server_ip"]
+        self.server_port = params["server_port"]
         self.ui.connection_label.setText(f"{self.loc.tr(CONNECTED_TO)} {params['server_ip']}:{params['server_port']}")
         self.ui.toggle_button.setEnabled(True)
         self.ui.tracking_group_box.setEnabled(True)
@@ -229,7 +236,6 @@ class Widget(QWidget):
         self.socket_handler.send(Command.CHANGE_FRAME_BORDERS, self.get_frame_borders_data())
         self.toggle_view_signal.emit()
 
-
     def on_roi_update(self, roi) -> None:
         if self.is_tracking_stopped:
             return
@@ -237,6 +243,14 @@ class Widget(QWidget):
         if not self.ui.tracker_stop_button.isEnabled():
             self.ui.tracker_stop_button.setEnabled(True)
 
+    def update_ui_text(self):
+        if not self.is_connected_to_server:
+            return
+        self.ui.connection_label.setText(f"{self.loc.tr(CONNECTED_TO)} {self.server_ip}:{self.server_port}")
+        if self.viewer.is_playing:
+            self.ui.toggle_button.setText(self.loc.tr(STOP_TEXT))
+        else:
+            self.ui.toggle_button.setText(self.loc.tr(PLAY_TEXT))
 
     def handle_roi_width(self, width: str | int) -> None:
         if width is None or width == '':
@@ -251,7 +265,6 @@ class Widget(QWidget):
         if self.ui.fast_roi_radio_button.isChecked():
             self.roi_handler.handle_fast_roi(True, width, self.ui.roi_height_slider.value())
 
-
     def handle_roi_height(self, height) -> None:
         if height is None or height == '':
             return
@@ -265,26 +278,21 @@ class Widget(QWidget):
         if self.ui.fast_roi_radio_button.isChecked():
             self.roi_handler.handle_fast_roi(True, self.ui.roi_width_slider.value(), height)
 
-
     def enable_fast_roi_parameters(self, enabled) -> None:
         self.ui.roi_width_line_edit.setEnabled(not enabled)
         self.ui.roi_width_slider.setEnabled(not enabled)
         self.ui.roi_height_line_edit.setEnabled(not enabled)
         self.ui.roi_height_slider.setEnabled(not enabled)
 
-
-
     def handle_roi_label_brightness(self, value) -> None:
         maximum_brightness = self.ui.roi_frame_brightness_slider.maximum()
         brightness = int((1 + value / maximum_brightness) * 100)
         self.ui.roi_brightness_value_label.setText(f"{brightness}%")
 
-
     def handle_roi_label_contrast(self, value) -> None:
         maximum_contrast = self.ui.roi_frame_contrast_slider.maximum()
         contrast = int((1 + value / maximum_contrast  - 0.5) * 100)
         self.ui.roi_contrast_value_label.setText(f"{contrast}%")
-
 
     def enable_tracking(self, roi) -> None:
         if not self.viewer.is_playing:
@@ -297,7 +305,7 @@ class Widget(QWidget):
             "stream_size": self.stream_receiver.get_stream_size(),
             "training_images_count": int(self.ui.training_count_line_edit.text()),
             "alpha_smoothing": float(self.ui.alpha_smoothing_line_edit.text()),
-            "max_corr": float(self.ui.max_corr_line_edit.text()),
+            "max_corr": float(self.ui.target_corr_line_edit.text()),
             "sigma_factor": float(self.ui.sigma_factor_line_edit.text())
         }
         self.socket_handler.send(Command.UPDATE_TRACKING, data)
@@ -305,7 +313,6 @@ class Widget(QWidget):
         self.ui.tracker_stop_button.setEnabled(True)
         self.ui.kalman_group_box.setEnabled(False)
         self.ui.fast_roi_group_box.setEnabled(False)
-
 
     def start_stream(self) -> None:
         if self.ui.stream_check_box.isChecked():
@@ -324,20 +331,17 @@ class Widget(QWidget):
         if self.ui.fast_roi_radio_button.isChecked():
             self.roi_handler.handle_fast_roi(True, self.ui.roi_width_slider.value(), self.ui.roi_height_slider.value(), True)
 
-
     def stop_stream(self) -> None:
         if self.ui.stream_check_box.isChecked():
             self.socket_handler.send(Command.STOP_STREAM)
         if self.ui.transmitter_check_box.isChecked() and not self.is_app_closing:
             self.socket_handler.send(Command.STOP_TRANSMISSION)
 
-
     def update_view_label(self, frame: np.ndarray) -> None:
         pixmap = numpy_to_pixmap(frame)
         size = self.ui.view_label.size()
         scaled_pixmap = scale_pixmap(pixmap, size)
         self.ui.view_label.setPixmap(scaled_pixmap)
-
 
     def draw_crosshair(self, frame: np.ndarray)-> np.ndarray:
         stream_size = self.stream_receiver.get_stream_size()
@@ -349,7 +353,6 @@ class Widget(QWidget):
         cv2.line(frame, (center_x, center_y - length), (center_x, center_y + length), (0, 0, 255), thickness)
         cv2.line(frame, (center_x - length, center_y), (center_x + length, center_y), (0, 0, 255), thickness)
         return frame
-
 
     def draw_crosshair_wrapper(self, func):
         def wrapper(*args, **kwargs):
@@ -389,24 +392,19 @@ class Widget(QWidget):
         self.ui.toggle_button.setText(self.loc.tr(STOP_TEXT))
         self.ui.params_group_box.setEnabled(False)
 
-
     def update_gui_on_stop(self) -> None:
         self.ui.toggle_button.setText(self.loc.tr(PLAY_TEXT))
         self.ui.params_group_box.setEnabled(True)
 
-
     def capture_start_state(self) -> dict:
         return {
             "connect_button": {
-                "text": self.ui.connect_button.text(),
                 "enabled": self.ui.connect_button.isEnabled()
             },
             "toggle_button": {
-                "text": self.ui.toggle_button.text(),
                 "enabled": self.ui.toggle_button.isEnabled()
             },
             "reboot_server_button": {
-                "text": self.ui.reboot_server_button.text(),
                 "enabled": self.ui.reboot_server_button.isEnabled()
             },
             "kalman_group_box": {
@@ -417,9 +415,6 @@ class Widget(QWidget):
             },
             "cfs_group_box": {
                 "enabled": self.ui.cfs_group_box.isEnabled()
-            },
-            "connection_label": {
-                "text": self.ui.connection_label.text()
             },
             "fast_roi_group_box": {
                 "enabled": self.ui.fast_roi_group_box.isEnabled()
@@ -435,13 +430,11 @@ class Widget(QWidget):
             }
         }
 
-
     def load_saved_parameters(self) -> None:
         saved_data = self.data.load_from_json(PARAMS_FILE_NAME)
         if saved_data is None:
             self.stream_receiver.set_default_stream_size()
             return
-
         try:
             self.ui.kalman_radio_button.setChecked(saved_data["kalman"])
             self.stream_receiver.change_stream_size_with_index(saved_data["stream_size_index"])
@@ -458,7 +451,6 @@ class Widget(QWidget):
             self.ui.keep_frame_aspect_ratio_radio_button.setChecked(saved_data["keep_frame_aspect_ratio"])
         except KeyError:
             pass
-
         if "skip_frames" in saved_data:
             self.ui.skip_frame_line_edit.setText(str(saved_data["skip_frames"]))
         if "bitrate" in saved_data:
@@ -467,8 +459,8 @@ class Widget(QWidget):
             self.ui.training_count_line_edit.setText(str(saved_data["training_count_line_edit"]))
         if "alpha_smoothing_line_edit" in saved_data:
             self.ui.alpha_smoothing_line_edit.setText(str(saved_data["alpha_smoothing_line_edit"]))
-        if "max_corr_line_edit" in saved_data:
-            self.ui.max_corr_line_edit.setText(str(saved_data["max_corr_line_edit"]))
+        if "target_corr_line_edit" in saved_data:
+            self.ui.target_corr_line_edit.setText(str(saved_data["target_corr_line_edit"]))
         if "sigma_factor_line_edit" in saved_data:
             self.ui.sigma_factor_line_edit.setText(str(saved_data["sigma_factor_line_edit"]))
         if "stream_fps_line_edit" in saved_data:
@@ -501,7 +493,6 @@ class Widget(QWidget):
         else:
             self.loc.set_language(DEFAULT_LANGUAGE)
 
-
     def save_parameters(self) -> None:
         params = {
             "kalman": self.ui.kalman_radio_button.isChecked(),
@@ -519,12 +510,10 @@ class Widget(QWidget):
             "keep_frame_aspect_ratio": self.ui.keep_frame_aspect_ratio_radio_button.isChecked(),
             "lang": self.loc.language
         }
-
         for image_cb in self.image_checkboxes:
             if image_cb.isChecked():
                 params["image_check_box"] = image_cb.objectName()
                 break
-
         if self.ui.skip_frame_line_edit.text() != '':
             params["skip_frames"] = int(self.ui.skip_frame_line_edit.text())
         if self.ui.bitrate_line_edit.text() != '':
@@ -533,8 +522,8 @@ class Widget(QWidget):
             params["training_count_line_edit"] = int(self.ui.training_count_line_edit.text())
         if self.ui.alpha_smoothing_line_edit.text() != '':
             params["alpha_smoothing_line_edit"] = float(self.ui.alpha_smoothing_line_edit.text())
-        if self.ui.max_corr_line_edit.text() != '':
-            params["max_corr_line_edit"] = float(self.ui.max_corr_line_edit.text())
+        if self.ui.target_corr_line_edit.text() != '':
+            params["target_corr_line_edit"] = float(self.ui.target_corr_line_edit.text())
         if self.ui.sigma_factor_line_edit.text() != '':
             params["sigma_factor_line_edit"] = float(self.ui.sigma_factor_line_edit.text())
         if self.ui.stream_fps_line_edit.text() != '':
@@ -553,14 +542,11 @@ class Widget(QWidget):
             params["frame_left_border"] = int(self.ui.frame_left_border_line_edit.text())
         if self.ui.frame_right_border_line_edit.text() != '':
             params["frame_right_border"] = int(self.ui.frame_right_border_line_edit.text())
-
         self.save_thread = threading.Thread(target=self._save_parameters, args=(params,))
         self.save_thread.start()
 
-
     def _save_parameters(self, params) -> None:
         self.data.save_to_json(PARAMS_FILE_NAME, params)
-
 
     def show_debug_message(self, msg: str) -> None:
         current_datetime = datetime.datetime.now().strftime("%X")
@@ -574,18 +560,17 @@ class Widget(QWidget):
         else:
             self.ui.debug_plain_text_edit.appendPlainText(new_line)
 
-
     def load_start_state(self) -> None:
-        self.ui.connect_button.setText(self.start_state["connect_button"]["text"])
+        self.ui.connect_button.setText(self.loc.tr("connect_button"))
+        self.ui.toggle_button.setText(self.loc.tr("toggle_button"))
+        self.ui.reboot_server_button.setText(self.loc.tr("reboot_server_button"))
+        self.ui.connection_label.setText(self.loc.tr("connection_label"))
         self.ui.connect_button.setEnabled(self.start_state["connect_button"]["enabled"])
-        self.ui.toggle_button.setText(self.start_state["toggle_button"]["text"])
         self.ui.toggle_button.setEnabled(self.start_state["toggle_button"]["enabled"])
-        self.ui.reboot_server_button.setText(self.start_state["reboot_server_button"]["text"])
         self.ui.reboot_server_button.setEnabled(self.start_state["reboot_server_button"]["enabled"])
         self.ui.kalman_group_box.setEnabled(self.start_state["kalman_group_box"]["enabled"])
         self.ui.params_group_box.setEnabled(self.start_state["params_group_box"]["enabled"])
         self.ui.cfs_group_box.setEnabled(self.start_state["cfs_group_box"]["enabled"])
-        self.ui.connection_label.setText(self.start_state["connection_label"]["text"])
         self.ui.fast_roi_group_box.setEnabled(self.start_state["fast_roi_group_box"]["enabled"])
         self.ui.cancel_connection_button.setEnabled(self.start_state["cancel_connection_button"]["enabled"])
         self.ui.tracker_stop_button.setEnabled(self.start_state["tracker_stop_button"]["enabled"])
@@ -601,14 +586,13 @@ class Widget(QWidget):
         }
         return borders
 
-
     def on_disconnect_from_server(self) -> None:
         self.viewer.stop()
         self.zeroconf_handler.clear()
         self.roi_handler.reset_roi()
         self.socket_handler.disconnect()
+        self.is_connected_to_server = False
         self.load_start_state_signal.emit()
-
 
     def closeEvent(self, e) -> None:
         self.is_app_closing = True
@@ -622,7 +606,6 @@ class Widget(QWidget):
         else:
             e.accept()
 
-
     def handle_ui_when_tracker_is_stopped(self) -> None:
         self.ui.tracker_stop_button.setEnabled(False)
         self.ui.kalman_group_box.setEnabled(True)
@@ -630,7 +613,6 @@ class Widget(QWidget):
         self.ui.tracker_params_group_box.setEnabled(True)
         if self.ui.fast_roi_radio_button.isChecked():
             self.roi_handler.handle_fast_roi(True, self.ui.roi_width_slider.value(), self.ui.roi_height_slider.value(),True)
-
 
     @QtCore.Slot()
     def on_connect_button_clicked(self) -> None:
@@ -668,6 +650,7 @@ class Widget(QWidget):
         self.roi_handler.reset_roi()
         self.viewer.stop()
         self.zeroconf_handler.clear()
+        self.is_connected_to_server = False
         self.load_start_state_signal.emit()
 
     @QtCore.Slot()
@@ -688,12 +671,11 @@ class Widget(QWidget):
             self.ui.language_tool_button.setIcon(self.loc.icons["ru"])
             self.loc.set_language("ru")
             self.loc.set_localisation()
-            self.start_state = self.capture_start_state()
         else:
             self.ui.language_tool_button.setIcon(self.loc.icons["en"])
             self.loc.set_language("en")
             self.loc.set_localisation()
-            self.start_state = self.capture_start_state()
+        self.language_changed_signal.emit()
 
 class MouseEventFilter(QObject):
     def __init__(self, callback_left_button=None, callbacks_right_button=None, callback_move=None):
@@ -701,7 +683,6 @@ class MouseEventFilter(QObject):
         self.callback_left_button = callback_left_button
         self.callbacks_right_button = callbacks_right_button
         self.callback_move = callback_move
-
 
     def eventFilter(self, obj, event) -> bool:
         if type(event) is QMouseEvent:
@@ -718,7 +699,6 @@ class MouseEventFilter(QObject):
             return True
         return super().eventFilter(obj, event)
 
-
 class KeyPressFilter(QObject):
     def __init__(self, callback_return_key=None, callback_escape_key=None):
         super().__init__()
@@ -733,7 +713,6 @@ class KeyPressFilter(QObject):
                 self.callback_escape_key()
             return True
         return super().eventFilter(obj, event)
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

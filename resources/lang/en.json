@@ -13,7 +13,7 @@
   "tracker_params_group_box": "Tracker",
   "training_count_label": "Train imgs",
   "alpha_smoothing_label": "Smooth coeff.",
-  "init_corr_label": "Init corr.",
+  "target_corr_label": "Target corr.",
   "sigma_factor_label": "Target sigma",
   "kalman_group_box": "Kalman",
   "kalman_radio_button": "Enable",
@@ -54,5 +54,5 @@
   "STOP_TEXT": "Stop stream",
   "CONNECTION_AWAITING": "Awaiting connection...",
   "CONNECTED_TO": "Connected to",
-  "RESTART_SERVER": "Rebooot server?"
+  "RESTART_SERVER": "Reboot server?"
 }
